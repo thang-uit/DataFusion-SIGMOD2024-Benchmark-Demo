@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bản đọc hiểu DataFusion (SIGMOD '24)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;600;700;800&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#ffffff; --ink:#1f2430; --muted:#5f5d52; --hl:#ffe36e; --hl-soft:#fff4bf;
+    --blue:#2f5bea; --green:#2f7d4c; --rule:#e8dfb8; --red:#b4412f;
+  }
+  @page{ size:A4; margin:16mm 15mm 18mm 15mm; }
+  *{ box-sizing:border-box; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ margin:0; background:var(--paper); color:var(--ink); font:10.4pt/1.62 "Literata", Georgia, "Times New Roman", serif; }
+  main{ max-width:180mm; margin:0 auto; padding:8mm 0; }
+  h1,h2,h3,h4,.sans{ font-family:"Be Vietnam Pro", "Helvetica Neue", Arial, sans-serif; }
+  h1{ font-size:21pt; line-height:1.2; margin:0 0 3mm; }
+  h2{ font-size:14.5pt; margin:9mm 0 2mm; padding:2mm 3mm; background:var(--hl); border-radius:2mm; break-after:avoid; }
+  h3{ font-size:11.6pt; margin:6mm 0 1.5mm; break-after:avoid; }
+  h4{ font-size:10.4pt; margin:4mm 0 1mm; break-after:avoid; }
+  .en{ font-weight:500; color:var(--muted); font-size:.82em; }
+  .pg{ float:right; font:600 8pt "Be Vietnam Pro", sans-serif; color:var(--muted); border:1px solid var(--rule); border-radius:10px; padding:0 2.2mm; margin-left:3mm; background:#fff; }
+  p{ margin:0 0 2.2mm; text-align:justify; hyphens:auto; }
+  ul,ol{ margin:0 0 2.5mm; padding-left:6mm; }
+  li{ margin-bottom:1mm; }
+  code,.mono{ font-family:"JetBrains Mono", Menlo, monospace; font-size:.86em; background:#f6efcf; padding:0 1mm; border-radius:1mm; }
+  pre{ font:8.6pt/1.5 "JetBrains Mono", Menlo, monospace; background:#22252d; color:#f3ecd2; padding:3mm 4mm; border-radius:2mm; white-space:pre-wrap; break-inside:avoid; }
+  .box{ border-radius:2mm; padding:2.5mm 3.5mm; margin:2.5mm 0 3.5mm; break-inside:avoid; }
+  .box > b.lbl{ display:block; font:700 9pt "Be Vietnam Pro", sans-serif; margin-bottom:1mm; }
+  .say{ background:#fff8d6; border-left:1.2mm solid #e0b400; }
+  .say > b.lbl{ color:#8a6a00; }
+  .term{ background:#eef3ff; border-left:1.2mm solid var(--blue); }
+  .term > b.lbl{ color:var(--blue); }
+  .term dl{ margin:0; display:grid; grid-template-columns:34mm 1fr; gap:1mm 3mm; }
+  .term dt{ font:600 9pt "Be Vietnam Pro", sans-serif; }
+  .term dd{ margin:0; }
+  .ex{ background:#ecf6ef; border-left:1.2mm solid var(--green); }
+  .ex > b.lbl{ color:var(--green); }
+  .warn{ background:#fbece8; border-left:1.2mm solid var(--red); }
+  .warn > b.lbl{ color:var(--red); }
+  figure{ margin:3mm 0 4mm; break-inside:avoid; text-align:center; }
+  figure img{ max-width:100%; border:1px solid var(--rule); border-radius:1.5mm; background:#fff; }
+  figure.half img{ max-width:62%; }
+  figcaption{ text-align:left; font-size:9pt; color:var(--muted); margin-top:1.5mm; }
+  figcaption b{ color:var(--ink); }
+  table{ border-collapse:collapse; width:100%; font-size:9pt; margin:2mm 0 3mm; break-inside:avoid; }
+  th,td{ border:1px solid var(--rule); padding:1mm 2mm; text-align:left; vertical-align:top; }
+  th{ background:var(--hl-soft); font-family:"Be Vietnam Pro", sans-serif; }
+  .cover{ border:1px solid var(--rule); border-radius:3mm; padding:7mm; background:#fff; margin-bottom:6mm; }
+  .cover .tag{ display:inline-block; background:var(--hl); padding:.5mm 2.5mm; border-radius:2mm; font:700 8.5pt "Be Vietnam Pro", sans-serif; }
+  .meta{ font-size:9.2pt; color:var(--muted); }
+  .legend{ display:grid; grid-template-columns:repeat(2,1fr); gap:2mm; margin-top:3mm; font-size:9pt; }
+  .legend div{ padding:1.5mm 2.5mm; border-radius:1.5mm; }
+  .toc{ columns:2; column-gap:8mm; font-size:9.4pt; }
+  .toc a{ color:inherit; text-decoration:none; }
+  .toc li{ break-inside:avoid; }
+  .pb{ break-before:page; }
+  a{ color:var(--blue); }
+  .small{ font-size:8.8pt; }
+</style>
+</head>
+<body>
+<main>
+
+<!-- ============ BÌA ============ -->
+<section class="cover">
+  <span class="tag">Bản đọc hiểu song song – Môn Hệ cơ sở dữ liệu tiên tiến</span>
+  <h1>Apache Arrow DataFusion: Bộ máy truy vấn phân tích nhanh, nhúng được, dạng mô-đun</h1>
+  <p class="meta"><i>Apache Arrow DataFusion: A Fast, Embeddable, Modular Analytic Query Engine</i> — Andrew Lamb, Yijie Shen, Daniël Heres, Jayjeet Chakraborty, Mehmet Ozan Kabak, Liang-Chi Hsieh, Chao Sun. <b>SIGMOD-Companion ’24</b>, Santiago, Chile, 9–15/06/2024. DOI: <a href="https://doi.org/10.1145/3626246.3653368">10.1145/3626246.3653368</a>. Bài gốc 13 trang (số trang in 5–17).</p>
+  <p>Tài liệu này đi <b>đúng thứ tự từng mục</b> của bài gốc. Ở mỗi mục có: (1) <b>nội dung</b> — diễn giải tiếng Việt đầy đủ các ý mà tác giả trình bày; (2) <b>“Tác giả muốn nói gì”</b> — ý đồ, thông điệp phía sau; (3) <b>thuật ngữ</b> giải thích dễ hiểu; (4) <b>ví dụ / liên hệ</b> khi cần. Nhãn <span class="pg" style="float:none">tr. X</span> cho biết trang PDF của bài gốc để bạn mở đối chiếu.</p>
+  <div class="legend sans">
+    <div class="say"><b>Tác giả muốn nói gì</b> – thông điệp, lập luận</div>
+    <div class="term"><b>Thuật ngữ</b> – giải nghĩa từ chuyên môn</div>
+    <div class="ex"><b>Ví dụ / liên hệ</b> – minh hoạ thêm (không có trong bài)</div>
+    <div class="warn"><b>Lưu ý</b> – chỗ dễ hiểu sai, hạn chế của bài</div>
+  </div>
+  <p class="small" style="margin-top:4mm">Về bản quyền: bài báo thuộc quyền xuất bản của ACM (không phải giấy phép mở), nên tài liệu này là <b>bản diễn giải và chú giải</b> để học, không phải bản dịch nguyên văn từng câu. Các hình được trích từ bài gốc kèm nguồn, phục vụ bình luận học thuật. Khi cần trích dẫn chính xác câu chữ trong báo cáo, hãy mở bài gốc theo số trang ghi bên cạnh.</p>
+</section>
+
+<h3 class="sans">Mục lục</h3>
+<ol class="toc">
+  <li><a href="#abs">Tóm tắt, Hình 1, Từ khoá</a></li>
+  <li><a href="#s1">1. Giới thiệu</a></li>
+  <li><a href="#s2">2. Hệ sinh thái nền tảng (Arrow, Parquet, Rust)</a></li>
+  <li><a href="#s3">3. Các trường hợp sử dụng</a></li>
+  <li><a href="#s4">4. Cơ sở dữ liệu “tháo rời”</a></li>
+  <li><a href="#s5">5. Tính năng của DataFusion (kiến trúc)</a></li>
+  <li><a href="#s6">6. Các kỹ thuật tối ưu</a></li>
+  <li><a href="#s7">7. Các điểm mở rộng</a></li>
+  <li><a href="#s8">8. Đánh giá hiệu năng</a></li>
+  <li><a href="#s9">9. Công trình liên quan</a></li>
+  <li><a href="#s10">10. Kết luận, 11. Lời cảm ơn</a></li>
+  <li><a href="#refs">Tài liệu tham khảo (đã phân nhóm)</a></li>
+  <li><a href="#gloss">Phụ lục: Bảng thuật ngữ</a></li>
+</ol>
+
+<!-- ============ TÓM TẮT ============ -->
+<h2 id="abs" class="pb"><span class="pg">tr. 1</span>Tóm tắt <span class="en">(Abstract)</span></h2>
+<p><b>Đoạn 1.</b> DataFusion là một <i>query engine</i> (bộ máy thực thi truy vấn) viết bằng Rust, dùng Apache Arrow làm mô hình bộ nhớ, có ba tính chất: <b>nhanh</b>, <b>nhúng được</b> (chạy như một thư viện bên trong chương trình khác) và <b>mở rộng được</b>. Bài báo sẽ: mô tả các công nghệ nền mà DataFusion dựa vào; đặt nó vào xu hướng dài hạn của việc xây dựng hệ CSDL; liệt kê tính năng, tối ưu, kiến trúc và các API mở rộng — để cho thấy một engine OLAP hiện đại cần những gì và hệ thống xây trên nó cần những giao diện nào; cuối cùng so sánh thực nghiệm với DuckDB để chứng minh rằng <b>chuẩn mở và thiết kế mở rộng được không cản trở hiệu năng ngang tầm hiện đại (state-of-the-art)</b>.</p>
+<p><b>Đoạn 2.</b> Tác giả thừa nhận từng kỹ thuật riêng lẻ trong DataFusion đều đã được mô tả nhiều lần. Điểm khác biệt là DataFusion vừa có hiệu năng cạnh tranh, vừa có kiến trúc mở, tuỳ biến được qua <b>hơn 10 API mở rộng lớn</b>. Nhờ linh hoạt nên nó đã được dùng trong nhiều CSDL thương mại và mã nguồn mở, pipeline học máy và các hệ thống xử lý dữ liệu khác. Tác giả dự đoán: tính dễ tiếp cận + linh hoạt + hiệu năng sẽ thúc đẩy làn sóng hạ tầng dữ liệu “may đo” được lắp ráp từ các thành phần mô-đun.</p>
+<div class="box say"><b class="lbl">Tác giả muốn nói gì</b>Đây <b>không phải</b> bài đề xuất thuật toán mới. Đóng góp là ở tầm <b>kiến trúc và kỹ nghệ hệ thống</b>: gom các kỹ thuật tốt nhất đã biết vào một engine mở, chia ranh giới mô-đun rõ, và chứng minh bằng số liệu rằng “mở + mô-đun” vẫn nhanh ngang “đóng + liền khối”. Câu hỏi nghiên cứu ngầm: <i>thiết kế mô-đun có bắt buộc phải trả giá bằng hiệu năng không?</i> — câu trả lời của bài: <b>không</b>.</div>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl>
+  <dt>Query engine</dt><dd>Phần mềm nhận truy vấn (SQL hoặc API), lập kế hoạch, tối ưu và thực thi để trả kết quả. Là “trái tim” của một hệ CSDL, nhưng không nhất thiết kèm lưu trữ, giao dịch, quản lý người dùng.</dd>
+  <dt>OLAP</dt><dd>Online Analytical Processing – xử lý phân tích: truy vấn quét nhiều dòng, gom nhóm, tổng hợp (doanh thu theo tháng…), khác OLTP (giao dịch ngắn, đọc/ghi vài dòng).</dd>
+  <dt>Embeddable (nhúng được)</dt><dd>Chạy trong cùng tiến trình với ứng dụng như một thư viện, không cần dựng server riêng (giống SQLite, DuckDB).</dd>
+  <dt>Extensible (mở rộng được)</dt><dd>Cho phép người dùng cắm thêm hàm, nguồn dữ liệu, toán tử, luật tối ưu… mà không sửa mã lõi.</dd>
+  <dt>State-of-the-art (SOTA)</dt><dd>Mức tốt nhất hiện thời. Ở đây được đo bằng việc so với DuckDB – engine phân tích nhúng được xem là rất mạnh lúc đó.</dd>
+</dl></div>
+
+<h3><span class="pg">tr. 1</span>Hình 1</h3>
+<figure><img src="../03-website/assets/img/figures/fig1-use-cases.png" alt="Hình 1 bài gốc: ba hệ thống xây trên DataFusion">
+<figcaption><b>Hình 1 (trích bài gốc).</b> Khi xây hệ thống trên DataFusion, người thiết kế chỉ hiện thực tính năng đặc thù lĩnh vực qua các API mở rộng (ô <span style="color:var(--blue)">xanh dương</span>), thay vì viết lại công nghệ engine OLAP tiêu chuẩn (ô <span style="color:var(--green)">xanh lá</span>).</figcaption></figure>
+<div class="box say"><b class="lbl">Đọc hình thế nào</b>Ba ví dụ: <b>CSDL chuyên biệt</b> (thêm ngôn ngữ riêng DSL, catalog riêng, toán tử riêng), <b>engine phân tích SQL</b> (thêm nhiều phương ngữ SQL, phân tích luồng dữ liệu), <b>ứng dụng phân tích</b> (logic ứng dụng + giao diện hệ thống tệp). Ô xanh lá “DataFusion” ở đáy cả ba là giống hệt nhau – phần dùng chung. Dấu “…” nghĩa là còn nhiều loại hệ thống khác. Đây là hình tóm tắt toàn bộ luận điểm bài báo: <b>phần chung thì dùng lại, phần riêng thì cắm vào</b>.</div>
+
+<h3><span class="pg">tr. 1</span>CCS Concepts &amp; Từ khoá</h3>
+<p>Bài được xếp vào nhóm: hệ thống CSDL (engine, OLAP, kiến trúc DBMS, mô hình quan hệ, xử lý truy vấn) và kỹ nghệ phần mềm (trừu tượng hoá – mô-đun, hiệu năng, khả năng sử dụng). Từ khoá: hệ CSDL, engine truy vấn mô-đun, <b>column store</b>, OLAP, <b>vectorized execution</b>, <b>parallel execution</b>, thiết kế API.</p>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl>
+  <dt>Column store</dt><dd>Lưu/xử lý dữ liệu theo cột: mọi giá trị của cột “giá” nằm liền nhau. Truy vấn chỉ cần 2/50 cột thì chỉ đọc 2 cột; dữ liệu cùng kiểu liền nhau nén tốt và hợp CPU.</dd>
+  <dt>Vectorized execution</dt><dd>Mỗi lần gọi toán tử xử lý cả một lô (vài nghìn giá trị) thay vì từng dòng → giảm chi phí gọi hàm, tận dụng cache và lệnh SIMD.</dd>
+  <dt>Parallel execution</dt><dd>Chia dữ liệu thành nhiều phần (partition) chạy đồng thời trên nhiều lõi CPU.</dd>
+</dl></div>
+
+<!-- ============ 1 ============ -->
+<h2 id="s1"><span class="pg">tr. 2</span>1. Giới thiệu <span class="en">(Introduction)</span></h2>
+<p><b>Bối cảnh.</b> Từ trước tới nay, mảng engine phân tích hiệu năng cao do các hệ thống <b>tích hợp chặt</b> (tightly integrated) thống trị: Vertica, Spark, DuckDB. Cách làm này tối ưu “đường nối” giữa định dạng tệp, bố cục bộ nhớ và bộ xử lý để đạt hiệu năng đỉnh. Nhưng xây một hệ như vậy <b>rất đắt</b>, cần nguồn tài trợ thương mại/nghiên cứu lớn vì khối lượng kỹ nghệ phần mềm khổng lồ.</p>
+<p><b>Vấn đề.</b> Nhu cầu mới xuất hiện liên tục (co giãn tính toán trên cloud, cấp dữ liệu cho pipeline AI/ML) đòi hỏi hệ dữ liệu mới, và rõ ràng <b>không cần viết lại engine mãi</b>. Vì ngành và giới học thuật đã xây/nghiên cứu rất nhiều hệ phân tích, ta đã biết đâu là <b>ranh giới tốt nhất giữa các phân hệ</b>: định dạng tệp, catalog, front-end ngôn ngữ, engine thực thi.</p>
+<p><b>Giải pháp.</b> DataFusion được thiết kế theo đúng các ranh giới API đó, cho phép lắp ráp hệ thống đầu-cuối từ thành phần mở, tái sử dụng, chất lượng cao, dùng chuẩn Arrow (mục 2.1) và Parquet (mục 2.2). Việc nó vừa nhanh vừa mở rộng được chứng minh rằng <b>engine OLAP hiện đại không cần kiến trúc liền khối</b>. Bản thân sự tồn tại của nó còn chứng minh <b>giấy phép dễ dãi</b> (permissive license – Apache 2.0) và <b>tổ chức mở</b> (mô hình quản trị của Apache Software Foundation) đủ sức tạo ra và duy trì công nghệ ở tầm này.</p>
+<p><b>Năm đóng góp</b> của bài:</p>
+<ol>
+  <li>Mô tả hệ sinh thái công nghệ nền của DataFusion — thứ tác giả tin sẽ chạy phần lớn hệ phân tích thành công trong thập kỷ tới.</li>
+  <li>Mô tả các hệ thống đã xây trên DataFusion → cho thấy khả năng của một engine OLAP “hàng phổ thông” (commodity).</li>
+  <li>Mô tả kiến trúc, tính năng, tối ưu → cho thấy engine hiện đại cần rộng đến mức nào và tốn công đến đâu.</li>
+  <li>Định nghĩa các API mở rộng → vạch ra các ranh giới mô-đun chính trong một “stack” phân tích.</li>
+  <li>Đánh giá hiệu năng → chứng minh SOTA đạt được bằng thành phần mô-đun và chuẩn mở.</li>
+</ol>
+<p><b>Bố cục:</b> mục 2 công nghệ nền; 3 ứng dụng thực tế; 4 xu hướng CSDL mô-đun; 5 kiến trúc &amp; mô hình thực thi; 6 các tối ưu; 7 API mở rộng; 8 đánh giá; 9 công trình liên quan; 10 kết luận.</p>
+<div class="box say"><b class="lbl">Tác giả muốn nói gì</b>Phần mở đầu dựng một lập luận 3 bước: (1) hệ liền khối nhanh nhưng đắt → (2) nhu cầu hệ dữ liệu mới bùng nổ, không thể ai cũng xây từ đầu → (3) đã đến lúc có “engine dùng chung” với ranh giới mô-đun chuẩn. Câu “mere existence” (sự tồn tại tự nó) là một luận điểm xã hội–kinh tế: mã nguồn mở + cộng đồng có thể làm được việc trước đây chỉ công ty lớn làm.</div>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl>
+  <dt>Tightly integrated / monolithic</dt><dd>Mọi tầng (lưu trữ, định dạng, thực thi, tối ưu) do một nhóm viết, gắn chặt với nhau – tối ưu tốt nhưng khó tách ra dùng lại.</dd>
+  <dt>Catalog</dt><dd>“Danh bạ” siêu dữ liệu: có bảng nào, cột gì, kiểu gì, nằm ở đâu, thống kê ra sao.</dd>
+  <dt>Front-end ngôn ngữ</dt><dd>Phần nhận ngôn ngữ truy vấn (SQL, DataFrame, PromQL…) và chuyển thành kế hoạch.</dd>
+  <dt>Permissive license</dt><dd>Giấy phép cho phép dùng cả trong sản phẩm thương mại đóng (Apache 2.0, MIT) – khác GPL.</dd>
+</dl></div>
+
+<!-- ============ 2 ============ -->
+<h2 id="s2"><span class="pg">tr. 2</span>2. Hệ sinh thái nền tảng <span class="en">(Foundational Ecosystem)</span></h2>
+<p>DataFusion chỉ khả thi nhờ ba công nghệ tầng dưới: <b>Arrow</b> (cấu trúc cột trong bộ nhớ + các <i>compute kernel</i>), <b>Parquet</b> (lưu trữ cột hiệu quả trên đĩa) và hệ sinh thái <b>Rust</b> (cho phép hiện thực vừa nhanh vừa dễ hiểu). Không có chúng, với nguồn lực khiêm tốn, khó mà xây được DataFusion. Thêm nữa, nhờ dùng các chuẩn này, hệ thống xây trên DataFusion dễ dàng <b>chia sẻ trực tiếp tệp và luồng dữ liệu trong bộ nhớ</b> với phần còn lại của hệ sinh thái, không phải chuyển đổi định dạng tốn thời gian và dễ lỗi.</p>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl><dt>Compute kernel</dt><dd>Hàm tính toán tối ưu sẵn chạy trên cả mảng (cộng hai cột, so sánh, lọc, sort…).</dd></dl></div>
+
+<h3><span class="pg">tr. 2</span>2.1 Apache Arrow</h3>
+<p>Về cốt lõi, Arrow chỉ <b>chuẩn hoá các thực hành tốt nhất trong ngành</b> để biểu diễn dữ liệu trong bộ nhớ theo bố cục cột thân thiện với cache. Arrow quy định các chi tiết như: cách biểu diễn NULL (validity bitmap), thứ tự byte (endianness), dữ liệu byte/chuỗi độ dài thay đổi, list, cấu trúc lồng nhau. Nhờ vậy hệ thống dùng Arrow được hưởng kỹ thuật đã biết và trao đổi dữ liệu dễ dàng giữa ứng dụng. Ví dụ của tác giả: NULL được đánh dấu bằng bit 0 hay 1 trong bitmap thì chẳng quan trọng mấy, nhưng <b>mọi hệ thống phải thống nhất cùng một quy ước</b> thì mới trao đổi được.</p>
+<p>Ban đầu Arrow chỉ là định dạng trao đổi trong bộ nhớ; về sau bổ sung tính năng phục vụ tính toán như <b>StringView</b> và kernel hiệu năng cao. Người dùng Arrow khỏi phải tự viết lại những tính năng đã được hiểu rõ nhưng tốn công hiện thực.</p>
+<div class="box say"><b class="lbl">Tác giả muốn nói gì</b>Giá trị của Arrow không nằm ở phát minh mà ở <b>sự đồng thuận</b>. Khi mọi công cụ (pandas/pyarrow, Spark, DuckDB, DataFusion…) nói chung “ngôn ngữ bộ nhớ”, dữ liệu đi qua lại <b>không cần serialize/deserialize</b> (zero-copy) – đây là nền móng cho mọi tính “mô-đun” phía sau.</div>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl>
+  <dt>Validity bitmap</dt><dd>Dãy bit đi kèm mỗi cột; bit i cho biết giá trị thứ i có NULL hay không. (Trong Arrow, bit 1 = hợp lệ, 0 = NULL.)</dd>
+  <dt>Endianness</dt><dd>Thứ tự byte của số nhiều byte: little-endian (byte thấp trước) hay big-endian (byte cao trước).</dd>
+  <dt>StringView</dt><dd>Kiểu chuỗi mới: mỗi phần tử 16 byte chứa độ dài + 4 byte đầu chuỗi (prefix) + vị trí phần còn lại; chuỗi ngắn nằm gọn “inline”. So sánh/lọc chuỗi nhanh hơn vì thường chỉ cần nhìn prefix.</dd>
+  <dt>Zero-copy</dt><dd>Hai thành phần dùng chung một vùng nhớ thay vì sao chép/chuyển đổi.</dd>
+</dl></div>
+
+<h3><span class="pg">tr. 2</span>2.2 Apache Parquet</h3>
+<p>Parquet là định dạng <b>tệp</b> mã nguồn mở hướng cột, sinh ra cho hệ sinh thái Hadoop, lấy cảm hứng từ nghiên cứu lưu trữ cột (C-Store). Nó có: cơ chế nén và mã hoá hiệu quả; hỗ trợ kiểu có cấu trúc qua <b>record shredding</b> (kỹ thuật từ Dremel); lược đồ (schema) nhúng trong tệp; cấu trúc chỉ mục kiểu <b>zone map</b>; và <b>Bloom filter</b> để truy cập nhanh.</p>
+<p>Khác Arrow (tối ưu cho truy cập ngẫu nhiên và xử lý trong RAM), Parquet tối ưu để <b>lưu khối lượng lớn tiết kiệm chỗ</b>. Không hoàn hảo, nhưng đã thành <b>chuẩn de-facto</b> cho lưu trữ và trao đổi trong giới phân tích nhờ: định dạng mở, nén tốt trên dữ liệu thật, thư viện khắp nơi, schema tự mô tả. Ngoài ra cấu trúc tệp cho phép engine áp dụng <b>projection/filter pushdown</b> và <b>late materialization</b> ngay trên tệp, đạt hiệu năng cạnh tranh với các định dạng chuyên dụng.</p>
+<div class="box ex"><b class="lbl">Ví dụ / liên hệ</b>Hãy hình dung: Parquet là “hàng hoá đóng thùng, hút chân không” trong kho (nhỏ gọn, có nhãn ghi min/max mỗi thùng); Arrow là “hàng bày trên bàn làm việc” (mở sẵn, lấy gì cũng nhanh). Engine đọc Parquet từ đĩa → giải nén thành Arrow trong RAM → tính toán.</div>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl>
+  <dt>Row group / Page</dt><dd>Tệp Parquet chia theo chiều dọc thành các <i>row group</i> (khối nhiều dòng); trong mỗi row group, mỗi cột là một <i>column chunk</i> gồm nhiều <i>page</i>. Mỗi row group/page có thống kê min/max.</dd>
+  <dt>Zone map</dt><dd>Lưu min/max cho từng vùng dữ liệu; nếu điều kiện lọc không thể thoả trong khoảng [min,max] thì bỏ qua cả vùng.</dd>
+  <dt>Bloom filter</dt><dd>Cấu trúc xác suất trả lời “chắc chắn không có” hoặc “có thể có” một giá trị – dùng để bỏ qua row group khi lọc bằng điều kiện bằng (=).</dd>
+  <dt>Record shredding</dt><dd>Cách “xé” dữ liệu lồng nhau (JSON-like) thành các cột phẳng kèm mức lặp/định nghĩa để ghép lại được.</dd>
+  <dt>Pushdown</dt><dd>Đẩy thao tác (chọn cột, lọc, limit) xuống sát nguồn dữ liệu để đọc ít hơn.</dd>
+  <dt>Late materialization</dt><dd>Trì hoãn việc giải mã/dựng các cột cho tới khi biết dòng nào thực sự cần (xem 6.8).</dd>
+</dl></div>
+
+<h3><span class="pg">tr. 2–3</span>2.3 Rust</h3>
+<p>Rust là ngôn ngữ lập trình hệ thống tương đối mới: quản lý bộ nhớ ở mức thấp nhưng <b>an toàn</b>, hiệu năng ngang C. Mô hình <b>ownership</b> (quyền sở hữu bộ nhớ) loại bỏ nhiều lỗi bộ nhớ và lỗi đa luồng tệ nhất thường gặp ở C/C++. Chương trình Rust dễ nhúng vào hệ khác vì <b>không cần runtime</b> (không có máy ảo, không có garbage collector) và tương thích <b>C ABI</b>. Triết lý <b>zero-cost abstraction</b>, thư viện hiệu năng phong phú, tài liệu và công cụ chẩn đoán thân thiện khiến Rust là lựa chọn hấp dẫn để làm ứng dụng hiệu năng cao với chi phí kỹ nghệ thấp hơn.</p>
+<p>Khác nhiều hệ thống build C/C++ (riêng cấu hình đã vất vả), trình quản lý gói <b>Cargo</b> và hệ sinh thái <i>crate</i> khiến việc thêm DataFusion vào dự án chỉ là <b>thêm một dòng</b> vào tệp cấu hình.</p>
+<div class="box ex"><b class="lbl">Ví dụ</b><code>datafusion = "50"</code> trong <code>Cargo.toml</code> là dùng được. Với Python: <code>pip install datafusion</code> (đã thử trên máy bạn: bản 50.1.0).</div>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl>
+  <dt>Ownership</dt><dd>Mỗi vùng nhớ có đúng một “chủ”; trình biên dịch kiểm tra lúc biên dịch để không có use-after-free, data race.</dd>
+  <dt>C ABI</dt><dd>Quy ước gọi hàm nhị phân chuẩn kiểu C → ngôn ngữ khác (Python, Java qua JNI, C++) gọi được thư viện Rust.</dd>
+  <dt>Zero-cost abstraction</dt><dd>Viết mã trừu tượng (generic, iterator) mà sau biên dịch chạy nhanh như viết tay.</dd>
+  <dt>Crate / Cargo</dt><dd>Crate = gói thư viện Rust; Cargo = công cụ build + quản lý phụ thuộc.</dd>
+</dl></div>
+
+<!-- ============ 3 ============ -->
+<h2 id="s3"><span class="pg">tr. 3</span>3. Các trường hợp sử dụng <span class="en">(Use Cases)</span></h2>
+<p>Nhiều sản phẩm thương mại và dự án mở dùng DataFusion vì kết hợp: mở rộng được, nhiều tính năng, truy vấn nhanh, tương thích hệ sinh thái. Dự án xây trên nó dành phần lớn thời gian cho <b>tính năng tạo giá trị</b> thay vì sao chép công nghệ engine. Dù còn giai đoạn đầu, DataFusion đã được dùng trong bốn nhóm:</p>
+<ol>
+  <li><b>CSDL may đo cho lĩnh vực riêng</b>: CSDL chuỗi thời gian (InfluxDB 3.0, Coralogix), nền tảng SQL dòng chảy/streaming (Synnada, Arroyo).</li>
+  <li><b>Runtime thực thi cho front-end truy vấn chuyên biệt</b>: Comet cho Apache Spark (mục 3.1), Seafowl cho PostgreSQL, ngôn ngữ trực quan hoá Vega, ngôn ngữ InfluxQL.</li>
+  <li><b>Công cụ phân tích SQL</b>: dask-sql, SDF – chỉ dùng bộ parse, planner và biểu diễn kế hoạch để <i>phân tích</i> câu SQL (không nhất thiết chạy).</li>
+  <li><b>Table format</b>: bản Rust của Delta Lake, Apache Iceberg, Lance – dùng biểu thức và kế hoạch truy vấn của DataFusion để lấy và giải mã dữ liệu từ xa, hiện thực <i>delete tombstone</i> dựa trên vị từ, đẩy vị từ vào chỉ mục phụ chuyên dụng, và gộp tệp (compaction) mà vẫn giữ thứ tự sắp xếp.</li>
+</ol>
+<p>Tất cả thừa hưởng lợi ích “<b>Arrow-native</b>”. Ví dụ Lance cho người dùng viết hàm Python xử lý <i>RecordBatch</i> bằng thư viện pyarrow sẵn có, <b>không cần chuyển đổi dữ liệu</b>.</p>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl>
+  <dt>Time series DB</dt><dd>CSDL tối ưu cho dữ liệu gắn mốc thời gian (metrics, log, IoT).</dd>
+  <dt>Table format</dt><dd>Lớp quy ước trên nhiều tệp Parquet trong object store để chúng hành xử như một “bảng” (phiên bản, xoá, cập nhật, schema). Ví dụ Delta Lake, Iceberg.</dd>
+  <dt>Delete tombstone</dt><dd>“Bia mộ” đánh dấu dòng đã xoá mà không ghi lại tệp; khi đọc phải lọc bỏ theo vị từ.</dd>
+  <dt>RecordBatch</dt><dd>Một lô dữ liệu Arrow: nhiều cột (mảng) cùng số dòng + schema. Đơn vị dữ liệu chạy giữa các toán tử.</dd>
+</dl></div>
+
+<h3><span class="pg">tr. 3</span>3.1 Tăng tốc Apache Spark</h3>
+<p>Một trường hợp đặc biệt là tăng tốc <b>Spark</b> – engine mã nguồn mở xử lý dữ liệu quy mô lớn, công cụ chuẩn cho data engineering, data science, ML. Spark viết chủ yếu bằng Scala/Java nên chịu các chi phí quen thuộc của <b>JVM</b>. Spark sẽ còn là thành phần chính của hạ tầng dữ liệu trong ngắn hạn nhờ phổ biến và API dễ dùng. May là thiết kế của Spark cho phép <b>chỉ thay engine thực thi</b> bằng bản chuyên dụng như Velox (mở) hoặc Photon (đóng, của Databricks).</p>
+<p>DataFusion được dùng trong vài runtime Spark “native”: <b>Blaze</b> và <b>Comet</b>. Ở đó phần front-end, parse, phân tích, tối ưu của Spark giữ nguyên; kế hoạch thực thi của Spark được <b>chuyển thành ExecutionPlan của DataFusion</b> (mục 5.5), chạy qua <b>JNI</b> với trao đổi dữ liệu zero-copy qua Arrow. Khi ngữ nghĩa Spark khác DataFusion, thiết kế mở rộng (mục 7) cho phép ghi đè và hiện thực biểu thức/toán tử riêng của Spark (ví dụ phép toán decimal – nơi Spark lệch chuẩn ANSI SQL).</p>
+<div class="box say"><b class="lbl">Tác giả muốn nói gì</b>Đây là minh chứng mạnh nhất cho tính mô-đun: một hệ khổng lồ (Spark) có thể <b>giữ nguyên “đầu”, thay “tim”</b>. Và chỗ ngữ nghĩa khác nhau thì giải quyết bằng API mở rộng chứ không cần fork engine.</div>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl>
+  <dt>JVM overhead</dt><dd>Chi phí của máy ảo Java: garbage collection, đối tượng cồng kềnh, khó dùng SIMD trực tiếp.</dd>
+  <dt>JNI</dt><dd>Java Native Interface – cầu nối để mã Java gọi mã native (C/C++/Rust).</dd>
+  <dt>ANSI SQL</dt><dd>Chuẩn SQL quốc tế (ISO/IEC 9075).</dd>
+</dl></div>
+
+<!-- ============ 4 ============ -->
+<h2 id="s4"><span class="pg">tr. 3</span>4. Cơ sở dữ liệu “tháo rời” <span class="en">(Deconstructed Databases)</span></h2>
+<p>Sự nổi lên của DataFusion và các hệ tương tự (Apache Calcite, Velox) là một phần của xu hướng dài hạn: rời bỏ hệ <b>“một cỡ vừa mọi người”</b> (one size fits all) để chuyển sang hệ <b>“vừa đúng mục đích”</b> (fit for purpose) – ý tưởng của Stonebraker. Vì xây công nghệ nền rất đắt, các hệ chuyên biệt chỉ sinh sôi được khi <b>lắp ráp từ thành phần tái sử dụng chất lượng cao</b> – xu hướng được gọi là <b>Deconstructed Database</b>.</p>
+<p>Văn liệu CSDL có vô số kỹ thuật tiên tiến đã nghiên cứu kỹ, nhưng do ràng buộc kinh tế và kiến trúc, chúng bị “nhốt” trong các CSDL tích hợp chặt, thường là độc quyền. Điều này hạn chế tái sử dụng → <b>vô số lần viết lại tốn kém</b>.</p>
+<p><b>Ví dụ 1 – công cụ data science (pandas).</b> Cộng đồng data science sáng tạo API mới (DataFrame thay vì SQL) và mô hình triển khai khác (tệp cục bộ thay vì server mạng). Nhưng ban đầu các công cụ này chạy chậm và không áp dụng nhiều kỹ thuật CSDL kinh điển như lập kế hoạch/tối ưu truy vấn, thực thi vector hoá song song. Thực tế, <b>Arrow ra đời chính từ mong muốn mang các kỹ thuật CSDL đó sang hệ sinh thái data science</b>.</p>
+<p><b>Ví dụ 2 – MapReduce/Hadoop.</b> Dù giới nghiên cứu CSDL đã chỉ ra nhiều điểm kém kỹ thuật (bài “MapReduce: A major step backwards” của DeWitt &amp; Stonebraker), việc thiếu thành phần mở tái sử dụng được khiến người ta lại phải viết lại các kỹ thuật phân tích cấp thấp tương tự.</p>
+<div class="box say"><b class="lbl">Tác giả muốn nói gì</b>Lịch sử lặp lại: mỗi cộng đồng mới (data science, big data) lại “phát minh lại cái bánh xe” chỉ vì kiến thức CSDL không có ở dạng linh kiện. DataFusion muốn chấm dứt vòng lặp đó.</div>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl>
+  <dt>Deconstructed Database</dt><dd>CSDL được “tháo” thành các khối độc lập (lưu trữ, định dạng, catalog, engine, ngôn ngữ) có thể thay thế/ghép lại.</dd>
+  <dt>Apache Calcite</dt><dd>Framework Java cung cấp parser SQL + tối ưu hoá, không có engine thực thi riêng.</dd>
+  <dt>Velox</dt><dd>Thư viện thực thi C++ của Meta, dùng làm “tim” cho nhiều hệ (Presto, Gluten cho Spark).</dd>
+</dl></div>
+
+<h3><span class="pg">tr. 3–4</span>4.1 Song song với LLVM</h3>
+<p>Chuyển đổi từ “vài hệ liền khối” sang “nhiều hệ chuyên biệt dùng chung nền mở” từng xảy ra: <b>ngôn ngữ lập trình hệ thống với LLVM</b>. Trình biên dịch từng gắn chặt với hệ máy (IBM System/390, Solaris, AIX, HP-UX), rồi chuyển sang thiết kế mô-đun dùng chung backend LLVM (Rust, Swift, Zig, Julia). Tương tự, CSDL đi từ hệ tích hợp chặt quản lý cả phần cứng lẫn phần mềm (Oracle, SQL Server, DB2) sang thiết kế mô-đun dùng chung backend DataFusion (InfluxDB 3.0, GreptimeDB, Coralogix).</p>
+<p>Như LLVM thúc đẩy sự ra đời của các ngôn ngữ, DataFusion thúc đẩy các hệ dữ liệu. Tác giả ngôn ngữ giờ tập trung vào tính năng riêng của ngôn ngữ, để LLVM lo phần quan trọng nhưng phổ biến (IR, tự vector hoá, sinh mã theo kiến trúc CPU). Tác giả hệ dữ liệu giờ tập trung vào tính năng đặc thù, để DataFusion lo phân tích cú pháp SQL, biểu diễn kế hoạch, tối ưu, định dạng lưu trữ và toán tử quan hệ chuẩn.</p>
+<table><tr><th>Trình biên dịch</th><th>Hệ dữ liệu</th></tr>
+<tr><td>Front-end ngôn ngữ (Rust, Swift…)</td><td>Front-end truy vấn (SQL, InfluxQL, Spark…)</td></tr>
+<tr><td>LLVM IR</td><td>LogicalPlan / ExecutionPlan</td></tr>
+<tr><td>Các pass tối ưu của LLVM</td><td>OptimizerRule / PhysicalOptimizerRule</td></tr>
+<tr><td>Sinh mã máy theo CPU</td><td>Thực thi vector hoá, song song</td></tr></table>
+<p class="small">(Bảng đối chiếu do người soạn lập để dễ hình dung; bài gốc mô tả bằng lời.)</p>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl>
+  <dt>LLVM</dt><dd>Hạ tầng trình biên dịch mô-đun: nhiều ngôn ngữ dịch về một biểu diễn trung gian chung (IR) rồi dùng chung bộ tối ưu và sinh mã.</dd>
+  <dt>IR</dt><dd>Intermediate Representation – biểu diễn trung gian độc lập ngôn ngữ nguồn và máy đích.</dd>
+</dl></div>
+
+<!-- ============ 5 ============ -->
+<h2 id="s5" class="pb"><span class="pg">tr. 4</span>5. Tính năng của DataFusion <span class="en">(DataFusion Features)</span></h2>
+<h3>5.1 Tổng quan kiến trúc</h3>
+<figure><img src="../03-website/assets/img/figures/fig2-architecture.png" alt="Hình 2 bài gốc: kiến trúc DataFusion">
+<figcaption><b>Hình 2 (trích bài gốc).</b> Kiến trúc (mục 5). Các phân hệ chuẩn (xanh lá) chạy truy vấn “ngay khi lấy về”; hệ thống xây trên DataFusion tuỳ biến hành vi qua API mở rộng (xanh dương, viền đứt).</figcaption></figure>
+<div class="box say"><b class="lbl">Đọc hình từ trái sang phải</b><b>Cột trái</b> – nguồn vào: Catalog &amp; Data Sources (Parquet, CSV, + catalog/bảng mở rộng) và Front Ends (SQL, DataFrame, + front-end mở rộng). <b>Giữa</b> – biểu diễn kế hoạch: <code>LogicalPlan</code> → <code>ExecutionPlan</code>, mỗi cái có mũi tên vòng “Optimizations/Transformations” (viết lại kế hoạch nhiều lượt) và ô mở rộng “Extension Node”, “LogicalPlan Rewrite”, “ExecutionPlan Rewrite”. <b>Phải</b> – Execution Engine: các Stream (Expression Eval, HashAggregate, Join, Sort, … và Extension Stream). Điểm mấu chốt: <b>mỗi tầng xanh lá đều có một ô xanh dương bên cạnh</b> – tức mọi tầng đều cắm thêm được.</div>
+<p>DataFusion chạy được ngay (“out of the box”) và đồng thời cung cấp API tuỳ biến rộng (mục 7). Người dùng có thể bắt đầu nhanh với engine cơ bản hiệu năng cao rồi chuyên biệt hoá dần theo nhu cầu và năng lực kỹ thuật. Hiện thực theo các mẫu chuẩn của ngành, dựa trên văn liệu nghiên cứu – <b>6 bước</b>:</p>
+<ol>
+  <li><b>Catalog &amp; Data Sources</b> cung cấp schema, bố cục và vị trí dữ liệu.</li>
+  <li><b>Front End</b> tạo cây toán tử quan hệ + biểu thức, gọi là <code>LogicalPlan</code>.</li>
+  <li><b>Optimizer</b> dùng các API phân tích để viết lại LogicalPlan và biểu thức thành dạng tối ưu hơn.</li>
+  <li>LogicalPlan được <b>hạ cấp</b> (lowered) thành <code>ExecutionPlan</code>, mang thêm đặc tính của kết quả trung gian (thứ tự sắp xếp…) và lựa chọn thuật toán cụ thể.</li>
+  <li>Các optimizer bổ sung viết lại ExecutionPlan cho khớp tài nguyên vật lý và bố cục dữ liệu.</li>
+  <li>ExecutionPlan được thực thi bởi các <code>Stream</code> sinh kết quả <b>dần dần</b> (incrementally).</li>
+</ol>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl>
+  <dt>LogicalPlan</dt><dd>Kế hoạch logic: nói <i>làm gì</i> (lọc, nối, gom nhóm) theo đại số quan hệ, chưa nói <i>làm thế nào</i>.</dd>
+  <dt>ExecutionPlan</dt><dd>Kế hoạch vật lý: nói <i>làm thế nào</i> – dùng Hash Join hay Merge Join, chia bao nhiêu partition, dữ liệu đã sắp theo cột nào.</dd>
+  <dt>Lowering</dt><dd>Chuyển từ biểu diễn trừu tượng xuống biểu diễn cụ thể hơn (giống IR → mã máy).</dd>
+  <dt>Stream</dt><dd>Đối tượng chạy thật một toán tử trên một partition, phát ra lần lượt các RecordBatch.</dd>
+</dl></div>
+<div class="box ex"><b class="lbl">Bằng chứng chạy thật (DataFusion 50.1, Python)</b>Lệnh <code>EXPLAIN</code> cho thấy đúng 2 tầng kế hoạch này:
+<pre>logical_plan  | Projection: t.b, count(Int64(1)) AS count(*) AS n, max(t.c)
+              |   Aggregate: groupBy=[[t.b]], aggr=[[count(Int64(1)), max(t.c)]]
+              |     Projection: t.b, t.c
+              |       Filter: t.a > Int64(1500000) AND t.b = Utf8View("F")
+              |         TableScan: t projection=[a, b, c], partial_filters=[...]
+physical_plan | ProjectionExec: ...
+              |   AggregateExec: mode=FinalPartitioned, gby=[b@0 as b] ...
+              |     CoalesceBatchesExec: target_batch_size=8192
+              |       RepartitionExec: partitioning=Hash([b@0], 4), input_partitions=4
+              |         AggregateExec: mode=Partial, gby=[b@0 as b] ...
+              |           FilterExec: a@0 > 1500000 AND b@1 = F
+              |             DataSourceExec: file_groups={4 groups ...}, file_type=parquet,
+              |               predicate=..., pruning_predicate=...</pre></div>
+
+<h3><span class="pg">tr. 4</span>5.2 Catalog và nguồn dữ liệu</h3>
+<h4>5.2.1 Catalog</h4>
+<p>Để lập kế hoạch, như mọi engine, DataFusion cần Catalog cung cấp siêu dữ liệu: có bảng/cột nào, kiểu dữ liệu, thông tin thống kê, chi tiết lưu trữ. DataFusion kèm sẵn một catalog đơn giản trong bộ nhớ và một catalog dạng thư mục/tệp phân vùng kiểu <b>Apache Hive</b>. Các catalog phức tạp hơn <b>không được đưa vào</b> vì quản lý catalog là quyết định thiết kế cốt lõi của từng hệ, khó có bản nào dùng chung rộng rãi. Thay vào đó, đa số hệ thống dùng API ở mục 7.2 để tự cấp thông tin catalog (ví dụ lấy thẳng từ Hive metastore).</p>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl><dt>Hive-style partitioning</dt><dd>Phân vùng theo thư mục, ví dụ <code>/sales/year=2024/month=05/part-0.parquet</code>; truy vấn <code>WHERE year=2024</code> chỉ cần đọc thư mục tương ứng.</dd><dt>Hive metastore</dt><dd>Dịch vụ lưu catalog dùng phổ biến trong hệ sinh thái Hadoop/Spark.</dd></dl></div>
+<h4>5.2.2 Nguồn dữ liệu</h4>
+<p>DataFusion có sẵn các <code>TableProvider</code> cho định dạng phổ biến: Parquet, Avro, JSON, CSV, Arrow IPC. Điểm quan trọng: <b>các định dạng có sẵn được viết bằng đúng API mà người dùng dùng để tự viết TableProvider</b>, và hỗ trợ đẩy xuống vị từ (predicate), cột (projection), giới hạn (limit). Trình đọc Parquet dùng bản Rust native của Arrow, có predicate pushdown và late materialization (6.8), Bloom filter, kiểu lồng nhau. Trình đọc CSV/JSON tự suy luận schema; JSON hỗ trợ đầy đủ kiểu lồng.</p>
+<div class="box say"><b class="lbl">Tác giả muốn nói gì</b>“Built-in dùng chung API với extension” là luận điểm lặp lại xuyên suốt bài (gặp lại ở hàm, toán tử, luật tối ưu). Hệ quả: phần mở rộng của bạn là “công dân hạng nhất”, nhanh ngang phần có sẵn.</div>
+
+<h3><span class="pg">tr. 4–5</span>5.3 Front End</h3>
+<h4>5.3.1 Kiểu dữ liệu</h4>
+<p>DataFusion dùng trực tiếp hệ kiểu của Arrow nên thừa hưởng dải kiểu rộng: số nguyên và số thực nhiều độ rộng byte, decimal độ chính xác cố định, chuỗi ký tự/nhị phân độ dài thay đổi, date, time, timestamp, interval, duration, struct và list lồng nhau. Khi thực thi, các toán tử trao đổi dữ liệu dưới dạng <b>Arrow Array</b> hoặc <b>giá trị vô hướng</b> (scalar – một giá trị đơn).</p>
+<h4>5.3.2 SQL Planner</h4>
+<p>DataFusion dùng thư viện <b>sqlparser-rs</b> để phân tích văn bản SQL, rồi sinh LogicalPlan từ cây cú pháp. Tác giả đùa rằng có lẽ không bản hiện thực SQL nào dám nhận là “đầy đủ” vì chuẩn SQL vô định hình và cứ phình ra mãi; nhưng DataFusion hỗ trợ tập con lớn: <code>WHERE, GROUP BY, ORDER BY, LIMIT, DISTINCT, WINDOW/OVER, UNION/INTERSECT, GROUPING SETS, FULL/INNER/OUTER JOIN</code>; và tính năng nâng cao: biên cửa sổ <code>ROWS/VALUES PRECEDING, FOLLOWING, UNBOUNDED</code>, CTE đệ quy, <code>GROUP BY</code> với <code>FILTER</code> và <code>ORDER BY</code> riêng cho từng hàm tổng hợp.</p>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl>
+  <dt>AST</dt><dd>Abstract Syntax Tree – cây cú pháp của câu SQL sau khi parse.</dd>
+  <dt>GROUPING SETS</dt><dd>Gom nhóm theo nhiều tổ hợp cột trong một câu (gồm ROLLUP, CUBE).</dd>
+  <dt>Recursive CTE</dt><dd><code>WITH RECURSIVE</code> – truy vấn tự tham chiếu, dùng duyệt cây/đồ thị.</dd>
+  <dt>Window function</dt><dd>Hàm tính trên “cửa sổ” các dòng lân cận mà không gộp dòng (ví dụ trung bình trượt 7 ngày).</dd>
+</dl></div>
+<h4>5.3.3 DataFrame và LogicalPlanBuilder API</h4>
+<p>Ngoài SQL còn có <b>DataFrame API</b> mô phỏng pandas để dựng kế hoạch theo phong cách thủ tục (gọi hàm nối tiếp). DataFrame sinh ra <b>cùng một LogicalPlan</b> như SQL, được tối ưu và chạy y hệt. Với nhu cầu nâng cao như ngôn ngữ truy vấn tự định nghĩa, <b>LogicalPlanBuilder</b> cho phép dựng kế hoạch trực tiếp theo kiểu builder của Rust.</p>
+<div class="box ex"><b class="lbl">Ví dụ</b><code>SELECT a, b FROM t WHERE a &gt; 10</code> tương đương <code>ctx.table("t").filter(col("a") &gt; lit(10)).select(col("a"), col("b"))</code> – hai cách viết, một kế hoạch.</div>
+
+<h3><span class="pg">tr. 5</span>5.4 LogicalPlan và Optimizer</h3>
+<h4>5.4.1 Kế hoạch và biểu thức</h4>
+<p>API của DataFusion gồm: (1) đầy đủ cấu trúc biểu diễn và đánh giá cây biểu thức + toán tử quan hệ ở cả mức <b>logic</b> (<code>Expr</code>, <code>LogicalPlan</code>) và <b>vật lý</b> (<code>PhysicalExpr</code>, <code>ExecutionPlan</code>), kèm hàm tạo/biến đổi tiện dụng; (2) thư viện <b>tuần tự hoá</b> các cấu trúc này thành byte để gửi qua mạng, bằng Protocol Buffers hoặc <b>Substrait</b>; (3) cấu trúc mô tả <b>thống kê</b> biết được lúc lập kế hoạch: số dòng, số NULL, min/max.</p>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl>
+  <dt>Expr / PhysicalExpr</dt><dd>Biểu thức như <code>a + 1 &gt; b</code> ở dạng logic (theo tên cột) / dạng vật lý (theo vị trí cột, đánh giá được trên RecordBatch).</dd>
+  <dt>Substrait</dt><dd>Chuẩn mở biểu diễn kế hoạch đại số quan hệ độc lập ngôn ngữ – để engine A gửi kế hoạch cho engine B chạy.</dd>
+  <dt>Protocol Buffers</dt><dd>Định dạng tuần tự hoá nhị phân của Google.</dd>
+</dl></div>
+<h4>5.4.2 Phân tích biểu thức</h4>
+<p>Ngoài đánh giá biểu thức, DataFusion có thư viện <b>rút gọn biểu thức</b>, <b>phân tích khoảng</b> (interval analysis) và <b>lan truyền miền giá trị</b> (range propagation). Kết hợp với thống kê, chúng cho ra <b>ước lượng cardinality và selectivity</b> của vị từ, và <b>loại bỏ partition ngay lúc lập kế hoạch</b> (ví dụ cắt row group Parquet – 6.8). Hệ thống khách dùng trực tiếp được, và DataFusion cũng dùng để làm các tối ưu sẵn có.</p>
+<div class="box ex"><b class="lbl">Ví dụ</b>Biết cột <code>a</code> trong một tệp có min=0, max=100. Vị từ <code>a &gt; 200</code> → phân tích khoảng kết luận “không dòng nào thoả” → bỏ cả tệp mà không đọc. Vị từ <code>a &gt; 90</code> → nếu giả định phân bố đều, selectivity ≈ 10%.</div>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl>
+  <dt>Selectivity</dt><dd>Tỷ lệ dòng thoả vị từ (0–1). Selectivity thấp = lọc gắt = “highly selective”.</dd>
+  <dt>Cardinality</dt><dd>Số dòng (hoặc số giá trị khác nhau) ước lượng – dùng để chọn thứ tự join, thuật toán.</dd>
+</dl></div>
+<h4>5.4.3 Thư viện hàm</h4>
+<p>Có thư viện lớn các hàm dựng sẵn loại <b>scalar, window, aggregate</b>: xử lý chuỗi, ngày/giờ/timestamp, số học interval, thao tác list/struct/map. Các hàm này được viết bằng <b>cùng API với hàm người dùng định nghĩa (UDF)</b>, thao tác trên Arrow Array, gọi được từ cả SQL lẫn DataFrame.</p>
+<h4>5.4.4 Viết lại kế hoạch (Rewrites)</h4>
+<p>DataFusion có khung viết lại kế hoạch mở rộng được, gồm chuỗi các lượt viết lại LogicalPlan và ExecutionPlan. Chúng xử lý chi tiết như <b>tự ép kiểu</b> (type coercion) cho khớp chữ ký toán tử/hàm, và <b>chèn thêm thao tác sort và phân phối lại</b> (redistribution) khi cần. Chính khung này cũng được dùng cho tối ưu (6.1).</p>
+<div class="box ex"><b class="lbl">Ví dụ</b><code>WHERE int_col = 1.5</code>: rewrite tự chèn ép kiểu để so sánh cùng kiểu. Merge Join cần đầu vào đã sắp → rewrite tự chèn <code>SortExec</code>.</div>
+
+<h3><span class="pg">tr. 5</span>5.5 Engine thực thi</h3>
+<p>DataFusion dùng mô hình <b>streaming kiểu kéo</b> (pull-based) và phân phối công việc cho nhiều lõi bằng <b>toán tử exchange kiểu Volcano</b> (cụ thể là <code>RepartitionExec</code>).</p>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl>
+  <dt>Pull-based</dt><dd>Toán tử cha “kéo” dữ liệu bằng cách gọi <code>next()</code> trên toán tử con; dữ liệu chảy từ lá (scan) lên gốc theo nhịp yêu cầu. Ngược lại là push-based (con chủ động đẩy lên).</dd>
+  <dt>Volcano model</dt><dd>Mô hình iterator kinh điển (Graefe 1990): mỗi toán tử có open/next/close. “Exchange operator” là toán tử đặc biệt chia/gộp luồng dữ liệu giữa các luồng song song, giúp các toán tử khác không cần biết về song song.</dd>
+</dl></div>
+<h4>5.5.1 Thực thi streaming</h4>
+<p>Khi có thể, mọi toán tử sinh đầu ra <b>dần dần</b> (Hình 3) dưới dạng Arrow Array gom thành <b>RecordBatch</b>, kích thước mặc định <b>8192 dòng</b>. Với thao tác <b>phá vỡ pipeline</b> (pipeline-breaking) như sort toàn bộ, aggregate cuối, hash join, toán tử phải đệm (buffer) dữ liệu, và <b>tràn ra đĩa</b> (spill) nếu cần. Dữ liệu giữa các Stream luôn là Arrow Array → toán tử do người dùng viết (7.7) tích hợp liền mạch. <b>Bên trong</b> từng Stream, có thể dùng biểu diễn khác Arrow (như Row Format, 6.6) khi giúp nhanh hơn.</p>
+<figure class="half"><img src="../03-website/assets/img/figures/fig3-stream-code.png" alt="Hình 3 bài gốc: mã Rust của một Stream">
+<figcaption><b>Hình 3 (trích bài gốc).</b> Mỗi Stream (toán tử) hiện thực trait <code>Stream</code> của Rust, sinh dần các RecordBatch chảy qua kế hoạch. Luồng điều khiển do cơ chế <code>await</code> của Rust quản lý: trình biên dịch tự sinh “continuation”, tự đóng gói trạng thái cần thiết trước khi nhường quyền. Mỗi Stream cố xuất batch với số dòng mục tiêu.</figcaption></figure>
+<div class="box say"><b class="lbl">Đọc đoạn mã Hình 3 từng dòng</b>
+<ul><li><code>impl Stream for MyOperator</code>: toán tử của tôi là một “dòng chảy” bất đồng bộ.</li>
+<li><code>while let Some(batch) = stream.next().await</code>: <b>kéo</b> batch tiếp theo từ toán tử con. Chữ <code>.await</code> nghĩa là nếu con chưa có dữ liệu (đang đọc đĩa/mạng) thì <b>nhường CPU</b> cho việc khác thay vì chặn luồng.</li>
+<li><code>self.process(&amp;batch)?</code>: xử lý batch; có thể chưa đủ để xuất (ví dụ đang gom nhóm) nên trả <code>Option</code>; dấu <code>?</code> là truyền lỗi lên.</li>
+<li><code>tx.send(...).await</code>: “trả” RecordBatch cho toán tử cha.</li></ul>
+Ý chính: tác giả không tự viết bộ lập lịch/máy trạng thái phức tạp; <b>tận dụng async/await của Rust</b> để có pipeline tạm dừng–tiếp tục miễn phí. (Lưu ý: dòng mã trong hình gửi <code>batch</code> trong khi biến tính được là <code>output</code> – có vẻ là lỗi đánh máy nhỏ của hình minh hoạ; ý nghĩa là gửi kết quả đã xử lý.)</div>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl>
+  <dt>Pipeline-breaking</dt><dd>Toán tử phải đọc <i>hết</i> đầu vào mới xuất được kết quả đầu tiên (sort toàn phần, bước build của hash join, aggregate cuối).</dd>
+  <dt>Spill to disk</dt><dd>Khi hết bộ nhớ cho phép, ghi tạm dữ liệu trung gian ra đĩa rồi đọc lại.</dd>
+  <dt>Trait</dt><dd>Khái niệm Rust tương tự interface.</dd>
+  <dt>Continuation</dt><dd>“Phần việc còn lại” của hàm sau điểm tạm dừng; Rust biên dịch async fn thành máy trạng thái lưu biến cục bộ.</dd>
+</dl></div>
+<h4>5.5.2 Thực thi đa lõi</h4>
+<p>Mỗi ExecutionPlan chạy bằng một hoặc nhiều Stream chạy song song. Đa số Stream chỉ phối hợp với đầu vào của nó; một số phải phối hợp với Stream “anh em” – như <code>HashJoinExec</code> khi xây bảng băm dùng chung, hay <code>RepartitionExec</code> khi phân phối lại dữ liệu sang các stream khác. Số Stream tạo cho mỗi ExecutionPlan gọi là <b>partitioning</b> của nó, quyết định lúc lập kế hoạch (Hình 4).</p>
+<figure class="half"><img src="../03-website/assets/img/figures/fig4-partitions.png" alt="Hình 4 bài gốc: thực thi phân vùng">
+<figcaption><b>Hình 4 (trích bài gốc).</b> Mỗi ExecutionPlan được gắn số partition do planner chọn, và tạo một Stream cho mỗi partition; các Stream chạy độc lập trên nhiều luồng. Ở đây <code>FilterExec</code> (lọc <code>path = "/api/v2/write"</code>) có 4 partition → 4 FilterStream chạy song song không cần phối hợp. Khối tím = RecordBatch: dưới là batch vào, trên là batch ra (nhỏ hơn vì nhiều dòng bị lọc).</figcaption></figure>
+<h4>5.5.3 Lập lịch luồng</h4>
+<p>Stream được viết thành hàm async của Rust và chạy trên thread pool là runtime <b>Tokio</b>. Tokio là một trong những thư viện phổ biến nhất của Rust, ban đầu dành cho I/O mạng bất đồng bộ. Nhưng bộ lập lịch <b>work-stealing</b> hiệu quả, hỗ trợ từ trình biên dịch cho continuation tự động và hiệu năng rất cao khiến nó cũng hấp dẫn cho tác vụ nặng CPU. Có nghiên cứu gần đây (Morsel-driven parallelism) chỉ ra thách thức của mô hình Volcano trên kiến trúc <b>NUMA</b>, nhưng DataFusion đạt khả năng mở rộng tương tự các hệ dùng thiết kế khác (xem 8.2).</p>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl>
+  <dt>Tokio</dt><dd>Runtime async của Rust: một nhóm luồng (thường = số lõi) chạy hàng nghìn tác vụ nhẹ.</dd>
+  <dt>Work-stealing</dt><dd>Luồng rảnh “ăn cắp” tác vụ trong hàng đợi của luồng bận → cân bằng tải tự động.</dd>
+  <dt>NUMA</dt><dd>Non-Uniform Memory Access – máy nhiều socket, mỗi CPU truy cập RAM “gần” nhanh hơn RAM “xa”.</dd>
+  <dt>Morsel-driven</dt><dd>Cách song song hoá của HyPer/Umbra/DuckDB: chia dữ liệu thành mẩu nhỏ (morsel) giao động cho luồng, nhận biết NUMA.</dd>
+</dl></div>
+<div class="box warn"><b class="lbl">Lưu ý</b>Bài gợi ý một tranh luận học thuật: Volcano + exchange (DataFusion) vs morsel-driven (DuckDB). Bài <b>không</b> chứng minh cái nào tốt hơn về lý thuyết – chỉ cho thấy thực nghiệm (Hình 7) hai hệ có đường cong mở rộng tương tự.</div>
+<h4><span class="pg">tr. 5–6</span>5.5.4 Quản lý bộ nhớ</h4>
+<p>DataFusion quản lý bộ nhớ bằng <code>MemoryPool</code> dùng chung cho một hoặc nhiều truy vấn chạy đồng thời. Các Stream <b>tự giác</b> báo khi mức dùng bộ nhớ thay đổi đáng kể bằng cách gọi <code>grow</code> và <code>shrink</code>. Cách làm thực dụng: theo dõi chính xác những “kẻ tiêu thụ lớn” (như bảng băm của hash aggregate), bỏ qua các cấp phát nhỏ, ngắn hạn (như bộ nhớ cho batch đầu ra hiện tại).</p>
+<p>Có hai pool dựng sẵn: <b>GreedyPool</b> – áp giới hạn bộ nhớ cho cả tiến trình nhưng không cố chia công bằng giữa các Stream; <b>FairPool</b> – chia đều tài nguyên cho mọi Stream phá-vỡ-pipeline. Hệ thống xây trên DataFusion thường tự viết MemoryPool với chính sách riêng bằng cùng API.</p>
+<div class="box ex"><b class="lbl">Ví dụ</b>Giới hạn 1 GB, truy vấn có Sort và HashAggregate. Greedy: ai xin trước được trước – Sort có thể ngốn 900 MB làm Aggregate phải spill sớm. Fair: mỗi bên tối đa ~500 MB.</div>
+
+<!-- ============ 6 ============ -->
+<h2 id="s6" class="pb"><span class="pg">tr. 6</span>6. Các kỹ thuật tối ưu <span class="en">(Optimizations)</span></h2>
+<p>Engine cho phép người dùng chỉ nói <i>muốn kết quả gì</i> (khai báo), còn engine lo mọi chi tiết để tính hiệu quả. Mục này liệt kê kỹ thuật DataFusion dùng. Tác giả nói thẳng: <b>các kỹ thuật không mới</b> – đều đã được nghiên cứu, ghi chép và hiện thực nhiều lần trong hệ thương mại. Đóng góp của DataFusion là cung cấp bản hiện thực <b>mã nguồn mở, kiểm thử kỹ, mở rộng được</b> để hệ mới khỏi phải viết lại (thêm một lần nữa).</p>
+
+<h3>6.1 Viết lại truy vấn (Query Rewrites)</h3>
+<p><b>Mức LogicalPlan:</b> projection pushdown, filter pushdown, limit pushdown, rút gọn biểu thức, loại bỏ biểu thức con chung (CSE), tách vị từ join, làm phẳng subquery tương quan, chuyển outer join thành inner join. <b>Mức ExecutionPlan:</b> bỏ sort không cần thiết, tối đa hoá thực thi song song, chọn thuật toán cụ thể (Hash Join hay Merge Join).</p>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl>
+  <dt>Common subexpression elimination</dt><dd>Biểu thức xuất hiện nhiều lần (ví dụ <code>price*qty</code>) chỉ tính một lần.</dd>
+  <dt>Correlated subquery flattening</dt><dd>Subquery tham chiếu cột của truy vấn ngoài (chạy lại cho từng dòng – rất chậm) được viết lại thành join.</dd>
+  <dt>Outer → inner join</dt><dd>Nếu WHERE loại hết các dòng NULL do outer join sinh ra thì outer join tương đương inner join (rẻ hơn, linh hoạt hơn).</dd>
+</dl></div>
+<h3>6.2 Sắp xếp (Sorting)</h3>
+<p>Sort, cùng với grouping và join, là thao tác đắt nhất trong hệ phân tích và được nghiên cứu kỹ. DataFusion dựa trên kỹ thuật của Graefe (2006): <b>cây kẻ thua</b> (tree of losers) để trộn, <b>khoá chuẩn hoá</b> (RowFormat, 6.6), khả năng <b>tràn ra tệp tạm</b> khi hết bộ nhớ, và hiện thực chuyên biệt cho <b>LIMIT (“Top K”)</b>.</p>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl>
+  <dt>Tree of losers</dt><dd>Cấu trúc cây để trộn k dãy đã sắp (k-way merge): mỗi nút trong giữ “kẻ thua” của trận so sánh, gốc là người thắng → lấy phần tử nhỏ nhất tiếp theo với log₂k phép so sánh.</dd>
+  <dt>Top K</dt><dd><code>ORDER BY … LIMIT 10</code>: chỉ cần giữ heap 10 phần tử, không sort toàn bộ.</dd>
+</dl></div>
+<h3>6.3 Gom nhóm và tổng hợp</h3>
+<p>Gom nhóm tổng hợp là lõi của mọi công cụ phân tích (tạo bản tóm tắt dễ hiểu từ dữ liệu lớn) nên được tối ưu cao. DataFusion có hiện thực <b>băm phân vùng song song hai pha</b> (two-phase parallel partitioned hash grouping), thực thi vector hoá, có thể spill ra đĩa, và xử lý riêng cho khoá nhóm <b>không có thứ tự / có thứ tự một phần / có thứ tự hoàn toàn</b>.</p>
+<div class="box ex"><b class="lbl">Hai pha là gì</b>Pha 1 (<code>mode=Partial</code>): mỗi partition tự gom nhóm cục bộ dữ liệu nó có. Giữa hai pha: <code>RepartitionExec Hash</code> gửi mọi bản ghi cùng khoá về cùng một partition. Pha 2 (<code>mode=FinalPartitioned</code>): gộp các kết quả cục bộ. Thấy rõ trong EXPLAIN ở mục 5.1. Nếu dữ liệu đã sắp theo khoá nhóm (<code>ordering_mode=Sorted</code>) thì nhóm cũ “đóng” là xuất được ngay, không cần giữ cả bảng băm.</div>
+<h3>6.4 Phép nối (Joins)</h3>
+<p>Khi nối nhiều quan hệ, DataFusion tự: nhận diện vị từ bằng (equi-join); <b>sắp lại thứ tự join theo heuristic dựa trên thống kê</b>; đẩy vị từ qua join (tuân thủ ràng buộc của OUTER join); thêm vị từ join bắc cầu; chọn thuật toán join vật lý tối ưu. Có các hiện thực: hash join song song trong bộ nhớ, merge join, symmetric hash join, nested loops join, cross join; mỗi loại hỗ trợ Inner, Left, Right, Full, LeftSemi, RightSemi, LeftAnti, RightAnti, tối ưu cho vị từ bằng. Hash join dùng <b>băm vector hoá và kiểm tra va chạm</b> tương tự thuật toán của MonetDB. Lúc viết bài chưa có (đang làm): áp dụng động bộ lọc join trong lúc scan – một dạng <b>sideways information passing</b>.</p>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl>
+  <dt>Transitive predicate</dt><dd>Từ <code>a = b</code> và <code>b = 5</code> suy ra <code>a = 5</code> → lọc sớm cả bảng của a.</dd>
+  <dt>Symmetric hash join</dt><dd>Xây bảng băm cho cả hai phía, hợp với dữ liệu dòng chảy vô hạn (streaming).</dd>
+  <dt>Semi / Anti join</dt><dd>Semi: giữ dòng bên trái có khớp (EXISTS/IN). Anti: giữ dòng không khớp (NOT EXISTS).</dd>
+  <dt>Sideways information passing</dt><dd>Dùng thông tin một phía join (ví dụ tập khoá bên build) để lọc phía kia ngay khi scan.</dd>
+</dl></div>
+<h3><span class="pg">tr. 6–7</span>6.5 Hàm cửa sổ (Window Functions)</h3>
+<p>DataFusion hỗ trợ hàm cửa sổ SQL (có mệnh đề <code>OVER</code>). Như các hiện thực tối ưu khác, nó <b>hạn chế sắp xếp lại</b> bằng cách tái dùng thứ tự sẵn có, chỉ sort khi cần theo <code>PARTITION BY</code> và <code>ORDER BY</code>. Hàm cửa sổ được tính <b>tăng dần</b>, xuất kết quả ngay khi đủ dữ liệu của cửa sổ. Nhóm tác giả chưa thấy cần các cơ chế mới phức tạp như <b>Physical Segment Trees</b>, vì thời gian xử lý truy vấn có hàm cửa sổ thường bị chi phối bởi thao tác khác như sort.</p>
+<div class="box say"><b class="lbl">Tác giả muốn nói gì</b>Một quyết định kỹ nghệ thực dụng: không cài thuật toán “xịn” nếu nó không phải nút thắt cổ chai thật.</div>
+<h3><span class="pg">tr. 7</span>6.6 Khoá sắp xếp chuẩn hoá / RowFormat</h3>
+<p>Engine cột như DataFusion mạnh ở thao tác vector hoá tự nhiên. Nhưng xử lý truy vấn còn cần thao tác <b>bản chất theo dòng</b>: sort nhiều cột, so sánh bằng nhiều cột khi group/join – nơi chi phí mỗi dòng không thể “chia đều” nhờ vector hoá. Trong các toán tử đó, DataFusion dùng <b>RowFormat</b>, một dạng <b>normalized key</b>, cho phép (1) so sánh từng byte bằng <code>memcmp</code> và (2) mẫu truy cập bộ nhớ dễ đoán. RowFormat đóng gói chặt, cột này nối tiếp cột kia, mỗi kiểu dữ liệu có cách mã hoá riêng, có thể điều chỉnh theo tuỳ chọn sort của SQL (ASC/DESC, NULL đứng đầu/cuối). Ví dụ: số nguyên có dấu và không dấu mã hoá big-endian; số thực được chuyển thành biểu diễn số nguyên có dấu có tính đến bit dấu.</p>
+<div class="box ex"><b class="lbl">Vì sao big-endian giúp memcmp đúng</b>memcmp so byte từ trái sang phải. Số 258 = <code>0x0102</code>, 3 = <code>0x0003</code>. Little-endian lưu 258 thành <code>02 01</code>, 3 thành <code>03 00</code> → memcmp kết luận 258 &lt; 3 (sai). Big-endian: <code>01 02</code> vs <code>00 03</code> → 258 &gt; 3 (đúng). Với số có dấu, thư viện arrow-row còn <b>lật bit dấu</b> để số âm đứng trước số dương; với số thực, đổi sang số nguyên rồi xử lý bit dấu để thứ tự byte khớp thứ tự số; DESC thì đảo toàn bộ bit. (Chi tiết lật bit dấu lấy từ tài liệu arrow-row, bài báo chỉ nói gọn “big-endian”.)</div>
+<h3><span class="pg">tr. 7</span>6.7 Tận dụng thứ tự sắp xếp</h3>
+<p>Optimizer biết và tận dụng mọi thứ tự có sẵn trong đầu vào hay kết quả trung gian chảy giữa các Stream. DataFusion (1) <b>theo dõi được nhiều thứ tự cùng lúc</b> (ví dụ dữ liệu vừa sắp theo (A,B) vừa theo (A,C) sau một join giữ thứ tự trên B=C) và (2) có Stream tối ưu cho đầu vào đã sắp hoặc sắp một phần: Merge Join, Hash Aggregation theo thứ tự một phần (streaming).</p>
+<p>Hai lý do quan trọng:</p>
+<ol><li><b>Gom cụm vật lý</b>: chỉ mục phụ thường quá đắt để duy trì với tốc độ ghi cao của nhiều hệ OLAP, nên thứ tự sắp của lưu trữ chính là cơ chế duy nhất để gom cụm dữ liệu.</li>
+<li><b>Bộ nhớ và streaming</b>: thứ tự sắp xác định dữ liệu được chia thế nào khi chảy qua Stream, cho biết giá trị có thể đổi ở đâu → biết chỗ nào phát kết quả trung gian được.</li></ol>
+<div class="box ex"><b class="lbl">Ví dụ</b>Log sắp theo thời gian, <code>GROUP BY giờ</code>: khi thấy bản ghi của 10:00, chắc chắn nhóm 09:00 đã đủ → xuất ngay và giải phóng bộ nhớ. Không có thứ tự thì phải giữ mọi nhóm đến cuối.</div>
+<h3><span class="pg">tr. 7</span>6.8 Pushdown và Late Materialization</h3>
+<p>DataFusion đẩy xuống phía nguồn dữ liệu: (1) <b>projection</b> – bỏ cột không cần khỏi kết quả trung gian; (2) <b>LIMIT/OFFSET</b> – cho kế hoạch dừng sớm khi đủ kết quả; (3) <b>vị từ</b> – đưa việc lọc sát (hoặc vào trong) nguồn dữ liệu, giảm lượng dữ liệu phần còn lại phải xử lý.</p>
+<p>Đẩy bộ lọc vào nguồn giúp TableProvider lọc ngay khi scan. Ví dụ trình đọc Parquet dùng vị từ đẩy xuống để (1) <b>cắt (bỏ qua) cả Row Group và Data Page</b> dựa trên metadata và Bloom filter; (2) <b>áp vị từ sau khi chỉ giải mã một phần các cột</b> – một dạng late materialization, tránh tốn công giải mã các cột khác ở những dòng rồi cũng bị lọc bỏ. Minh hoạ với điều kiện <code>A &gt; 35 AND B = "F"</code>, 4 bước:</p>
+<ol><li>Bỏ mọi Row Group có <code>A<sub>max</sub> ≤ 35</code> hoặc <code>B<sub>max</sub> &lt; "F"</code> hoặc <code>B<sub>min</sub> &gt; "F"</code> (dựa vào metadata của Row Group).</li>
+<li>Giải mã cột B, đánh giá <code>B = "F"</code>, ghi lại các dòng thoả thành một <b>RowSelection</b> (ví dụ dòng [100–244]).</li>
+<li>Chỉ giải mã những page của cột A chứa các dòng liên quan (nhờ <b>Page Index</b>), đánh giá <code>A &gt; 35</code>, thu hẹp RowSelection (ví dụ còn [100–150]).</li>
+<li>Giải mã các page chứa RowSelection còn lại cho các cột được chọn khác (ví dụ C).</li></ol>
+<p>Các kỹ thuật này rất hiệu quả khi các cột của vị từ được gom cụm, ví dụ khi chúng đứng đầu thứ tự sắp của tệp đã sắp.</p>
+<div class="box ex"><b class="lbl">Bằng chứng chạy thật</b>Tệp 2 triệu dòng, 10 row group, sắp theo <code>a</code>, truy vấn <code>WHERE a &gt; 1500000 AND b = 'F'</code>. <code>EXPLAIN ANALYZE</code> báo: <code>row_groups_pruned_statistics=8</code>, <code>row_groups_matched_statistics=2</code> → chỉ đọc 2/10 row group. Vị từ cắt tỉa engine tự sinh: <code>a_max &gt; 1500000 AND b_min &lt;= F AND F &lt;= b_max</code> – đúng là phủ định của quy tắc bước 1. Bật <code>datafusion.execution.parquet.pushdown_filters=true</code> thì thấy thêm <code>pushdown_rows_pruned=185715</code> (lọc từng dòng trong lúc giải mã = late materialization; ở bản 50.1 tuỳ chọn này mặc định tắt).</div>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl>
+  <dt>RowSelection</dt><dd>Danh sách khoảng chỉ số dòng cần giữ, chuyển từ bước lọc cột này sang bước đọc cột khác.</dd>
+  <dt>Page Index</dt><dd>Chỉ mục ở cuối tệp Parquet ghi min/max và vị trí của từng page → nhảy thẳng tới page cần.</dd>
+  <dt>Materialization</dt><dd>“Hiện thực hoá” giá trị – giải mã/dựng thành dữ liệu thật trong bộ nhớ.</dd>
+</dl></div>
+
+<!-- ============ 7 ============ -->
+<h2 id="s7" class="pb"><span class="pg">tr. 7</span>7. Các điểm mở rộng <span class="en">(Extensibilities)</span></h2>
+<p>Mục này mô tả các điểm mở rộng, đủ linh hoạt cho nhiều trường hợp ở mục 3. Danh sách API này là <b>bản thiết kế mẫu (blueprint)</b> cho các engine mô-đun khác và cũng là thực hành tốt cho ranh giới nội bộ của các hệ tích hợp chặt.</p>
+<p>Lô dữ liệu được biểu diễn bằng <code>ColumnarValue</code>: hoặc một giá trị scalar, hoặc một Arrow Array. Vì chính DataFusion dùng Arrow khắp nơi, phần mở rộng có <b>hiệu năng như chức năng dựng sẵn</b> và dùng được cùng kho thư viện, kiến thức, công cụ (kernel tính toán, Arrow Flight để truyền mạng…).</p>
+<h3>7.1 Hàm Scalar, Aggregate, Window</h3>
+<p>Hệ thống xây trên DataFusion hay thêm hàm đặc thù không hợp với thư viện chung: hàm cửa sổ tính đạo hàm, chia “xô” lịch cho chuỗi thời gian, hàm mật mã riêng… Có thể đăng ký động các loại hàm nhận/trả ColumnarValue:</p>
+<ol><li><b>Scalar</b>: mỗi dòng vào → một dòng ra.</li><li><b>Aggregate</b>: nhiều dòng vào → một dòng ra.</li><li><b>Window</b>: mỗi dòng vào → một dòng ra, nhưng phép tính được nhìn các giá trị trong khung cửa sổ xung quanh.</li></ol>
+<p>DataFusion dĩ nhiên không phải engine đầu tiên có API UDF. Nhưng API ở hệ khác thường <b>kém hiệu năng và tính năng</b> so với hàm dựng sẵn; kể cả khi nhanh ngang, chúng khó dùng vì gắn chặt với biểu diễn dữ liệu riêng của engine – đặc biệt khó với engine cột do độ phức tạp của vector hoá.</p>
+<div class="box ex"><b class="lbl">Bằng chứng chạy thật</b>Đăng ký UDF Python nhận cả mảng Arrow: <code>udf(lambda arr: pc.multiply(arr, 2), [pa.int64()], pa.int64(), "immutable", "double_it")</code>, rồi gọi <code>SELECT double_it(a) FROM t</code> – chạy được ngay. Hàm nhận <b>cả một mảng</b> (vector hoá), không phải từng giá trị.</div>
+<h3><span class="pg">tr. 7–8</span>7.2 Catalog</h3>
+<p>Kết hợp Catalog API và đánh giá biểu thức (5.4.1), các catalog xây trên DataFusion dùng metadata tệp (như min/max) để tránh đọc cả tệp hoặc một phần tệp (Row Group). Ví dụ bản Rust của Delta Lake dùng DataFusion để bỏ qua tệp Parquet dựa trên vị từ lọc. Catalog API gồm: (1) <code>TableProvider</code> cho từng bảng (7.3); (2) <code>SchemaProvider</code> – tập các TableProvider; (3) <code>CatalogProvider</code> – tập các SchemaProvider (hệ khác gọi là “catalog” hoặc “database”). Đây là hàm async của Rust nên dễ tích hợp I/O mạng để truy cập catalog từ xa.</p>
+<div class="box ex"><b class="lbl">Liên hệ</b>Giống tên đầy đủ <code>catalog.schema.table</code> trong SQL, ví dụ <code>datafusion.public.sales</code>.</div>
+<h3><span class="pg">tr. 8</span>7.3 Nguồn dữ liệu</h3>
+<p>Với trait <code>TableProvider</code>, hệ thống có thể truy vấn bộ đệm Arrow trong RAM, stream dữ liệu từ server từ xa (có thể qua Arrow Flight) hoặc đọc định dạng tệp riêng. Provider dựng sẵn (5.2.2) dùng đúng API này và tạo ra cùng loại async Stream các Arrow Array như ExecutionPlan. API hỗ trợ: (1) đầu vào phân vùng; (2) đẩy xuống projection, filter, limit; (3) đọc song song; (4) thứ tự sắp có sẵn; (5) thống kê; (6) cập nhật.</p>
+<p>Như với UDF, ở engine tích hợp chặt rất khó làm nguồn dữ liệu tự định nghĩa nhanh ngang định dạng dựng sẵn: nó phải sinh dữ liệu theo định dạng native của engine, phải tương tác với biểu diễn biểu thức của engine để làm predicate pushdown, và có thể phải làm I/O mạng bất đồng bộ để xuất dần (streaming).</p>
+<h3><span class="pg">tr. 8</span>7.4 Môi trường thực thi</h3>
+<p>Môi trường thực thi rất khác nhau giữa các hệ. Ví dụ có NVMe cục bộ nhanh thì cache metadata trong RAM ít ý nghĩa hơn so với môi trường không có (một số môi trường Kubernetes). Có hệ chạy nhiều truy vấn đồng thời chia sẻ tài nguyên lạc quan, có hệ chạy với ngân sách tài nguyên định trước. DataFusion tuỳ biến được qua các API quản lý tài nguyên: <code>MemoryPool</code> (5.5.4); <code>DiskManager</code> – tạo tệp spill có đếm tham chiếu; <code>CacheManager</code> – cache nội dung thư mục (ví dụ thao tác LIST đắt đỏ trên object store) và metadata từng tệp như thống kê cần cho lập kế hoạch và cắt tỉa (6.8). Cache những thứ này quan trọng khi truy vấn từ <b>lưu trữ tách rời</b> (disaggregated storage) như object store. DataFusion có bản hiện thực đơn giản; ai cần chính sách riêng (cơ chế loại bỏ cache, giới hạn dung lượng tạm) tự viết.</p>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl><dt>Object store</dt><dd>Lưu trữ đối tượng như Amazon S3, GCS, Azure Blob: rẻ, vô hạn, nhưng mỗi request có độ trễ cao; LIST thư mục lớn rất chậm.</dd><dt>Disaggregated storage</dt><dd>Lưu trữ tách khỏi máy tính toán, truy cập qua mạng.</dd></dl></div>
+<h3><span class="pg">tr. 8</span>7.5 Front-end truy vấn / ngôn ngữ mới</h3>
+<p>Mở rộng SQL bằng cách <b>viết lại AST</b> trước khi gọi SQL planner (5.3.2). Với mở rộng lớn hoặc ngôn ngữ khác hẳn (PromQL, Vega), người dùng viết front-end riêng tạo ra LogicalPlan bằng các cấu trúc ở 5.4.1.</p>
+<h3><span class="pg">tr. 8</span>7.6 Viết lại truy vấn / lượt tối ưu</h3>
+<p>Người dùng thêm tối ưu đặc thù (sắp lại đầu vào, mở rộng macro…) bằng cách hiện thực <code>OptimizerRule</code> và <code>PhysicalOptimizerRule</code>, viết lại cây LogicalPlan và ExecutionPlan, với <b>cùng API như các rewrite dựng sẵn</b> (6.1). Người dùng còn chỉ định được thứ tự áp dụng các rewrite, cả có sẵn lẫn của mình.</p>
+<h3><span class="pg">tr. 8</span>7.7 Toán tử quan hệ</h3>
+<p>Hệ chuyên biệt thường cần toán tử không có trong hệ chỉ-SQL. Ví dụ InfluxDB IOx có toán tử riêng để <b>lấp khoảng trống</b> chuỗi thời gian (gap filling), <b>xoay schema</b> (pivot) và <b>phân giải thứ tự chèn</b>. Người dùng mở rộng bằng cách hiện thực trait <code>ExecutionPlan</code> – giống hệt các nút có sẵn (join, filter, group by, window). DataFusion <b>không phân biệt</b> ExecutionPlan người dùng viết với ExecutionPlan dựng sẵn khi tối ưu và thực thi. Các hệ khác cũng có chức năng tương tự dưới dạng hàm bảng do người dùng định nghĩa, nhưng thường giới hạn cú pháp và vị trí đặt toán tử, và hay chạy chậm hơn toán tử dựng sẵn.</p>
+<table><tr><th>Mục</th><th>API mở rộng</th><th>Cắm vào tầng nào (Hình 2)</th></tr>
+<tr><td>7.1</td><td>ScalarUDF, AggregateUDF, WindowUDF</td><td>Biểu thức</td></tr>
+<tr><td>7.2</td><td>CatalogProvider, SchemaProvider</td><td>Catalog</td></tr>
+<tr><td>7.3</td><td>TableProvider</td><td>Data Sources</td></tr>
+<tr><td>7.4</td><td>MemoryPool, DiskManager, CacheManager</td><td>Môi trường thực thi</td></tr>
+<tr><td>7.5</td><td>Viết lại AST / Frontend riêng</td><td>Front Ends</td></tr>
+<tr><td>7.6</td><td>OptimizerRule, PhysicalOptimizerRule</td><td>Plan Rewrites</td></tr>
+<tr><td>7.7</td><td>ExecutionPlan (+ Extension Node logic)</td><td>Execution Engine</td></tr></table>
+<p class="small">(Bảng tổng hợp do người soạn lập; đếm theo tên API ta có hơn 10 API – khớp con số “more than 10 major extension APIs” ở phần tóm tắt.)</p>
+
+<!-- ============ 8 ============ -->
+<h2 id="s8" class="pb"><span class="pg">tr. 8</span>8. Đánh giá hiệu năng <span class="en">(Performance Evaluation)</span></h2>
+<p><b>Mục tiêu:</b> định lượng “cái giá” hiệu năng của việc dùng chuẩn mở và kiến trúc mô-đun thay cho thiết kế tích hợp chặt. Họ so với <b>DuckDB</b> – hệ mà họ cho là tiêu biểu cho engine phân tích tích hợp chặt SOTA lúc viết bài. Kết quả: DataFusion <b>tương đương</b> trên nhiều tình huống thực tế. Họ thừa nhận benchmark khó làm công bằng, hai engine nhắm mục tiêu khác nhau và cả hai thay đổi rất nhanh, nhưng thí nghiệm cho thấy <b>không có gì cơ bản trong thiết kế mở giới hạn hiệu năng</b>.</p>
+<p>Chỉ số quan trọng nhất là <b>thời gian thực thi đầu-cuối</b>, đo trên ba bộ benchmark phản ánh kích thước dữ liệu và truy vấn hay gặp:</p>
+<table><tr><th>Benchmark</th><th>Mô phỏng</th><th>Dữ liệu dùng</th></tr>
+<tr><td><b>ClickBench</b></td><td>Phân tích web quy mô lớn: lọc + tổng hợp trên một bảng lớn phi chuẩn hoá</td><td>Bộ <code>athena_partitioned</code> 14 GB, không chỉnh sửa: 100 tệp Parquet, mỗi tệp ~140 MB</td></tr>
+<tr><td><b>TPC-H</b></td><td>Kho dữ liệu kinh điển: 22 truy vấn join nhiều bảng làm báo cáo tổng hợp</td><td>Scale Factor 10, 8 tệp CSV chuyển sang Parquet, row group tối đa 1 triệu dòng, tổng 2,5 GB</td></tr>
+<tr><td><b>H2O-G</b></td><td>Thao tác data science thường gặp (nhóm truy vấn groupby)</td><td>Một tệp CSV 488 MB, 10 triệu bản ghi (<code>G1_1e7_1e2_5_0.csv</code>)</td></tr></table>
+<p>Mọi benchmark chạy <b>trực tiếp trên tệp dữ liệu gốc</b>. Nạp dữ liệu vào định dạng riêng của từng CSDL là cách phổ biến ở thế hệ trước, nhưng tác giả cho rằng ngày càng không thực tế khi luồng dữ liệu linh hoạt; với hệ mục tiêu của họ, dữ liệu chủ yếu được đọc/ghi bằng định dạng mở qua nhiều công cụ. Phiên bản: <b>DataFusion 32.0.0</b> và <b>DuckDB 0.9.1</b> (mới nhất lúc viết), chạy qua Python binding. Script công khai tại <a href="https://github.com/JayjeetAtGithub/datafusion-duckdb-benchmark">github.com/JayjeetAtGithub/datafusion-duckdb-benchmark</a>.</p>
+<div class="box warn"><b class="lbl">Lưu ý khi đọc</b>Chạy trên tệp gốc (Parquet/CSV) là điều kiện <b>có lợi cho triết lý của DataFusion</b> (Arrow/Parquet là “sân nhà”), trong khi DuckDB có định dạng lưu trữ riêng tối ưu hơn. Tác giả giải thích lý do chọn, nhưng khi viết báo cáo bạn nên nêu điểm này như một giới hạn của thí nghiệm.</div>
+
+<h3><span class="pg">tr. 9–10</span>8.1 Hiệu quả trên một lõi</h3>
+<p><b>Cấu hình:</b> VM Google Cloud <code>e2-standard-8</code>, CPU Intel Broadwell, 32 GB RAM, 8 vCPU, Ubuntu 22.04.3, kernel 6.2.0-1013-gcp. Giới hạn mỗi engine <b>1 lõi</b>: DataFusion đặt <code>target_partitions = 1</code>, DuckDB đặt <code>PRAGMA threads = 1</code>.</p>
+<figure class="half"><img src="../03-website/assets/img/figures/table1-clickbench.png" alt="Bảng 1 bài gốc" style="max-width:48%">
+<figcaption><b>Bảng 1 (trích bài gốc).</b> ClickBench trên một lõi, đơn vị giây, dữ liệu 14 GB chia 100 tệp Parquet. Cột “Delta” = tỷ lệ chênh (faster = DataFusion nhanh hơn).</figcaption></figure>
+<p><b>ClickBench (Bảng 1).</b> DataFusion tốt hơn ở truy vấn có <b>vị từ rất chọn lọc</b> (Q2, Q8, Q20) – có lẽ nhờ đẩy vị từ vào scan Parquet để bỏ cả row group. Cũng tốt ở truy vấn <b>chỉ một nhóm</b> (Q4, Q7, Q30) – có lẽ nhờ cập nhật aggregate vector hoá. Với truy vấn chọn lọc vừa và số nhóm vừa (Q15, Q31, Q32, Q41, Q42) hai bên tương đương. Với truy vấn <b>số nhóm rất lớn</b> (≥ 10 triệu nhóm: Q18, Q19, Q36) DuckDB tốt hơn, có lẽ nhờ aggregate song song được tối ưu của nó.</p>
+<div class="box ex"><b class="lbl">Số liệu nổi bật (đọc từ Bảng 1)</b>Nhanh hơn nhiều nhất: Q30 – 5,91 s vs 69,08 s (<b>11,7×</b>), Q7 – 0,30 vs 2,08 (6,91×). Chậm hơn nhiều nhất: Q1 – 1,22 vs 0,18 (6,74×, nhưng chênh tuyệt đối ~1 s), Q9 – 27,91 vs 10,83 (2,58×), Q5 – 2,49×, Q36 – 2,43×. Đếm 37 truy vấn trong bảng: DataFusion nhanh hơn ở 19, chậm hơn ở 18. Bảng không có Q21–Q24, Q34, Q35 (bài không giải thích lý do).</div>
+<figure><img src="../03-website/assets/img/figures/fig5-tpch.png" alt="Hình 5 bài gốc: TPC-H" style="max-width:80%">
+<figcaption><b>Hình 5 (trích bài gốc).</b> TPC-H SF=10 trên một lõi, mỗi bảng một tệp Parquet. Xanh dương = DuckDB, cam = DataFusion; trục tung = giây.</figcaption></figure>
+<p><b>TPC-H (Hình 5).</b> Khác ClickBench, đa số truy vấn TPC-H join nhiều bảng. DataFusion nhanh hơn ở một số truy vấn có vị từ rất chọn lọc (Q4, Q9); tương đương ở Q3, Q6, Q14; chậm hơn hẳn (&gt; 2×) ở Q11, Q17, Q18, Q21. Phần lớn chênh lệch do <b>thứ tự join chưa tối ưu</b>; khi ép thủ công thứ tự join tốt hơn thì hai hệ tương đương.</p>
+<div class="box warn"><b class="lbl">Quan sát thêm từ hình</b>Ở Q15 hình không có cột cam (DataFusion), và Q2 DataFusion chậm rõ (~6,8 s vs ~1,5 s) – văn bản không bình luận hai điểm này.</div>
+<figure><img src="../03-website/assets/img/figures/fig6-h2o.png" alt="Hình 6 bài gốc: H2O-G" style="max-width:80%">
+<figcaption><b>Hình 6 (trích bài gốc).</b> H2O-G (groupby) trên một lõi, một tệp CSV 488 MB.</figcaption></figure>
+<p><b>H2O-G (Hình 6).</b> DataFusion nhỉnh hơn ở đa số truy vấn, nhưng tệ hơn rõ ở Q9 do hàm tổng hợp <code>corr</code> hiện thực chưa hiệu quả. Thời gian mọi truy vấn chủ yếu bị chi phối bởi <b>việc parse CSV</b>, và DataFusion hưởng lợi từ bộ parse CSV tối ưu của Arrow Rust. Giới hạn 1 lõi có thể bất lợi cho DuckDB vốn tối ưu parse CSV đa luồng, trong khi DataFusion không có đánh đổi tương tự.</p>
+<p><b>Thảo luận.</b> Trên một lõi, hai engine tương đương, mạnh yếu tuỳ đặc điểm truy vấn. Kết luận: <b>dùng chuẩn mở không giới hạn hiệu năng một cách cơ bản</b>. Theo trực giác và kinh nghiệm của tác giả, yếu tố quyết định là <b>mức đầu tư kỹ nghệ</b>. Cộng đồng DataFusion đã có dự án cải thiện chỗ còn kém DuckDB (thứ tự join, grouping số nhóm lớn); ngược lại họ dự đoán DuckDB sẽ cải thiện chỗ kém DataFusion (grouping số nhóm nhỏ, predicate pushdown Parquet, parse CSV).</p>
+
+<h3><span class="pg">tr. 10–11</span>8.2 Khả năng mở rộng (Scalability)</h3>
+<p>DataFusion thường dùng như engine một nút, hoặc engine nhúng trong hệ phân tán, nên khả năng <b>scale up</b> (dùng nhiều lõi trên một máy) rất quan trọng. Họ chạy mỗi truy vấn ClickBench 5 lần, số lõi từ 1 đến 192, vẽ 3 lần cuối để loại hiệu ứng cache/khởi động. Máy: GCP <code>c3-highcpu-176</code>, Intel Sapphire Rapids, 176 vCPU, 352 GB RAM, Ubuntu 22.04, kernel 6.2.0-1016-gcp.</p>
+<figure><img src="../03-website/assets/img/figures/fig7-scaling.png" alt="Hình 7 bài gốc: mở rộng theo số lõi">
+<figcaption><b>Hình 7 (trích bài gốc).</b> Thời gian truy vấn ClickBench với 1, 2, 4, 8, 16, 32, 64, 128, 192 lõi. Mỗi ô là một truy vấn; trục tung thang log (giây), trục hoành số lõi. Các ô trống hàng cuối chỉ là ô thừa của lưới.</figcaption></figure>
+<ul>
+<li><b>Hiệu năng tương đối:</b> phải nhìn giá trị tuyệt đối trên trục tung. Q10 mất vài giây, Q1 dưới 1 giây. Chênh tương đối trông lớn ở Q1–Q4 hay Q37–Q42 nhưng tuyệt đối chỉ vài trăm mili giây, còn ở Q19, Q32, Q33 chênh tuyệt đối lớn hơn cả bậc độ lớn.</li>
+<li><b>1–32 lõi:</b> cả hai giảm thời gian <b>gần tuyến tính</b> khi tăng lõi – rất tốt.</li>
+<li><b>64, 128, 192 lõi:</b> lẫn lộn. Q28, Q29 tiếp tục cải thiện gần đường lý tưởng (có grouping số nhóm thấp 6000 và vừa 3 triệu, tốn nhiều CPU để so khớp chuỗi <code>LIKE</code>). Q11, Q14, Q32 cả hai <b>chậm đi</b> khi thêm lõi – có lẽ vì mỗi lõi làm ít việc hơn nên chi phí phối hợp giữa các lõi chiếm tỷ trọng lớn hơn. Q41, Q42, Q43 chậm đi rõ hơn ở DataFusion (một phần do chiến lược flush bảng băm chưa tinh chỉnh với số nhóm lớn); Q25, Q26 thì DuckDB chậm đi rõ hơn.</li>
+</ul>
+<p><b>Thảo luận.</b> Hai hệ có hành vi mở rộng tương tự → thiết kế mô-đun và bộ lập lịch kiểu kéo của DataFusion <b>không ngăn cản</b> hiệu năng đa lõi SOTA. Hình dạng đường cong của hai bên giống nhau, cho thấy khác biệt chủ yếu do <b>chi tiết hiện thực</b> chứ không do khác biệt căn bản về thiết kế.</p>
+<div class="box term"><b class="lbl">Thuật ngữ</b><dl><dt>Scale up / scale out</dt><dd>Up: máy mạnh hơn (thêm lõi). Out: thêm máy.</dd><dt>Near-linear scaling</dt><dd>Gấp đôi số lõi → thời gian gần như giảm một nửa.</dd><dt>Coordination overhead</dt><dd>Chi phí chia việc, đồng bộ, gộp kết quả giữa các luồng – cố định hoặc tăng theo số lõi, nên khi việc mỗi lõi quá ít thì nó lấn át.</dd></dl></div>
+
+<!-- ============ 9 ============ -->
+<h2 id="s9"><span class="pg">tr. 10</span>9. Công trình liên quan <span class="en">(Related Work)</span></h2>
+<p>Chủ đề kiến trúc mô-đun, ghép nối được đã được nêu từ năm 2000 (Chaudhuri &amp; Weikum, “RISC-style database”). Thuật ngữ “Deconstructed Database” phổ biến từ 2018, và gần đây có lời kêu gọi đẩy nhanh thiết kế mô-đun (Composable Data Management System Manifesto, VLDB 2023).</p>
+<p><b>Velox</b> và <b>Apache Calcite</b> đều cung cấp thành phần để lắp CSDL mới, nhưng để có hệ đầu-cuối chạy được cần tích hợp đáng kể (ví dụ nối JVM với mã native, hệ thống build), còn DataFusion chỉ cần <b>một dòng cấu hình</b>. Thiết kế mô-đun cho phép thay thành phần tuỳ nhu cầu: <b>Photon</b> và <b>Gluten</b> (dựa trên Velox) chỉ thay một mô-đun – engine thực thi – của Spark bằng bản native nhanh hơn.</p>
+<p>Giống DataFusion, <b>DuckDB</b> là hệ SQL mã nguồn mở không cần server riêng. Khác biệt: DuckDB nhắm tới <b>người chạy SQL</b>, còn DataFusion nhắm tới <b>người xây hệ thống mới</b> (có thể chạy SQL và cả xử lý khác). DuckDB có API mở rộng hạn chế hơn, và có biểu diễn bộ nhớ, định dạng lưu trữ, bản Parquet và bộ lập lịch luồng riêng.</p>
+<h3>9.1 Hướng nghiên cứu tương lai</h3>
+<ul><li>Đo số dòng mã / giờ công cần để xây hệ từ đầu <b>nếu không có</b> DataFusion.</li>
+<li>Nghiên cứu các API mở rộng được dùng thế nào trong thực tế.</li>
+<li>Đánh giá có hệ thống hiệu năng đầu-cuối của ứng dụng xây trên DataFusion.</li>
+<li>Cần hệ mô-đun tương tự cho mảng khác: xử lý giao dịch (OLTP), kho key/value phân tán.</li>
+<li>Hỗ trợ hạng nhất cho ngôn ngữ hệ thống khác như C/C++, Swift (binding hoặc bản riêng).</li></ul>
+<div class="box say"><b class="lbl">Tác giả muốn nói gì</b>Họ tự nhận bài chưa đo được “chi phí tiết kiệm” một cách định lượng – đây chính là gợi ý đề tài cho người đọc (và cho phần “phát triển từ bài báo” trong báo cáo của bạn).</div>
+
+<!-- ============ 10, 11 ============ -->
+<h2 id="s10"><span class="pg">tr. 10–11</span>10. Kết luận &amp; 11. Lời cảm ơn</h2>
+<p>Từ khi có LLVM, nhu cầu viết trình biên dịch từ đầu giảm mạnh. Với công nghệ như DataFusion, việc xây CSDL từ đầu cũng sẽ hiếm như vậy. Đương nhiên, với đủ đầu tư kỹ nghệ, engine tích hợp chặt <b>về lý thuyết</b> có thể vượt engine mô-đun. Nhưng khi công sức để đạt SOTA ngày càng lớn, tác giả tin các engine mô-đun được dùng rộng rãi như DataFusion sẽ thu hút đầu tư cần thiết từ cộng đồng mã nguồn mở lớn, và có tính năng phong phú hơn, nhanh hơn mọi thiết kế tích hợp chặt <b>trừ những hệ được đầu tư mạnh nhất</b>. Thiết kế mô-đun không phải chiến lược duy nhất, hệ tích hợp chặt mới vẫn xuất hiện; nhưng khi DataFusion được biết đến nhiều hơn, họ dự đoán việc áp dụng sẽ tăng tốc và bùng nổ các hệ phân tích mới trước đây không thể có.</p>
+<p><b>Lời cảm ơn:</b> DataFusion là dự án cộng đồng; lúc viết bài có <b>hơn 5500 Pull Request từ hơn 350 người</b>. Tác giả cảm ơn mọi người đóng góp ý tưởng, review, báo lỗi, mã, kiểm thử, và các phản biện ẩn danh của SIGMOD.</p>
+<div class="box say"><b class="lbl">Tác giả muốn nói gì</b>Lập luận kinh tế: hiệu năng = hàm của <b>đầu tư</b>, không phải của kiến trúc. Một engine dùng chung gom được đầu tư của nhiều công ty → về dài hạn có thể vượt hầu hết engine riêng. Đây là một <b>dự đoán</b>, chưa phải điều được chứng minh trong bài.</div>
+<div class="box ex"><b class="lbl">Diễn biến sau bài báo (không có trong bài)</b>04/2024 DataFusion tách khỏi Arrow thành dự án cấp cao nhất của Apache, đổi tên “Apache DataFusion” (<a href="https://arrow.apache.org/blog/2024/05/07/datafusion-tlp/">thông báo</a>). 11/2024 bản 43.0.0 đứng đầu ClickBench mục truy vấn Parquet phân vùng (<a href="https://datafusion.apache.org/blog/2024/11/18/datafusion-fastest-single-node-parquet-clickbench/">blog</a>) – về sau các engine khác vượt lại, DataFusion vẫn ở nhóm đầu. Điều này phần nào xác nhận dự đoán “đầu tư cộng đồng → hiệu năng”.</div>
+
+<!-- ============ REFS ============ -->
+<h2 id="refs" class="pb"><span class="pg">tr. 11–13</span>Tài liệu tham khảo – đã phân nhóm</h2>
+<p>Bài có 77 tài liệu tham khảo. Dưới đây nhóm lại theo vai trò để bạn biết nên đọc thêm gì (số trong ngoặc là số thứ tự trong bài).</p>
+<table>
+<tr><th style="width:32%">Nhóm</th><th>Tài liệu</th></tr>
+<tr><td>Nền tảng của DataFusion</td><td>Arrow [24], DataFusion [25], Parquet [26], PyArrow [28], Rust [76], Cargo [12], Tokio [67], sqlparser-rs [72], Substrait [22], Stream trait [32], StringView [21], SQL reference [29], ASF governance [27]</td></tr>
+<tr><td>Engine tích hợp chặt để so sánh</td><td>DuckDB [66], Vertica [47], Spark [77], Oracle [16], SQL Server [15], DB2 [14], Photon [7], PostgreSQL [62]</td></tr>
+<tr><td>Thành phần / hệ mô-đun khác</td><td>Velox [60], Calcite [6], Gluten [64]</td></tr>
+<tr><td>Xu hướng CSDL mô-đun</td><td>RISC-style DB [10], Deconstructed DB [44], Composable Manifesto [61], Composable Codex [18], One size fits all [73], LLVM [52], Swift/Zig/Julia [37,31,8]</td></tr>
+<tr><td>Kỹ thuật kinh điển được dùng</td><td>Volcano [33], Sorting (Graefe) [34], Materialization strategies [1,70], Zone maps / SMA [57], Dremel record shredding [56], C-Store [74], MonetDB [36], Compiled vs vectorized [43], Morsel-driven [53], Window functions [54], Interval analysis [58], User-defined operators [71]</td></tr>
+<tr><td>Blog kỹ thuật của chính DataFusion</td><td>Tokio cho CPU [46], Parquet độ trễ ms [48], Multi-column sort [49], Gom hàng triệu nhóm [50], Window trong streaming [2], DuckDB aggregate [45]</td></tr>
+<tr><td>Hệ thống dùng DataFusion</td><td>InfluxDB [41,39,40], Coralogix [13], Synnada [75], Arroyo [4], Blaze [5], Comet [11], Seafowl [69], VegaFusion [55], dask-sql [63], SDF [68], Delta Lake [3,20], Iceberg [30], Lance [51], Hive [9], pandas [59]</td></tr>
+<tr><td>Benchmark &amp; phương pháp</td><td>ClickBench [38], TPC-H [17], H2O db-benchmark [35], Fair benchmarking [65], MapReduce [19,23], ISO SQL [42]</td></tr>
+</table>
+<div class="box warn"><b class="lbl">Lỗi nhỏ trong danh mục</b>[64] Gluten trỏ nhầm sang đường link của H2O db-benchmark. Mục 7.2 đánh số “1), 2), 2)” (lặp số 2). Mục 6.1 có “TableProvideres”, 7.6 có “ad” (add) – lỗi chính tả, không ảnh hưởng nội dung.</div>
+
+<!-- ============ GLOSSARY ============ -->
+<h2 id="gloss">Phụ lục: Bảng thuật ngữ tra nhanh</h2>
+<table>
+<tr><th style="width:28%">Thuật ngữ</th><th>Nghĩa ngắn gọn</th></tr>
+<tr><td>Arrow</td><td>Chuẩn bố cục dữ liệu cột trong RAM, dùng chung giữa nhiều công cụ.</td></tr>
+<tr><td>Parquet</td><td>Định dạng tệp cột, nén tốt, có thống kê min/max theo row group/page.</td></tr>
+<tr><td>RecordBatch</td><td>Lô dữ liệu Arrow (mặc định 8192 dòng) chảy giữa các toán tử.</td></tr>
+<tr><td>LogicalPlan / ExecutionPlan</td><td>Kế hoạch “làm gì” / “làm thế nào”.</td></tr>
+<tr><td>Stream</td><td>Một toán tử đang chạy trên một partition, phát dần RecordBatch.</td></tr>
+<tr><td>Partition (partitioning)</td><td>Số luồng song song của một ExecutionPlan.</td></tr>
+<tr><td>RepartitionExec</td><td>Toán tử exchange chia lại dữ liệu giữa các partition (round-robin hoặc theo hash).</td></tr>
+<tr><td>Pull-based / Volcano</td><td>Cha gọi next() trên con để kéo dữ liệu.</td></tr>
+<tr><td>Pipeline breaker</td><td>Toán tử phải đọc hết đầu vào mới xuất được (sort, build hash).</td></tr>
+<tr><td>Spill</td><td>Tràn dữ liệu trung gian ra đĩa khi thiếu RAM.</td></tr>
+<tr><td>MemoryPool (Greedy/Fair)</td><td>Bộ quản lý hạn mức bộ nhớ giữa các toán tử.</td></tr>
+<tr><td>Pushdown</td><td>Đẩy chọn cột / lọc / limit xuống nguồn dữ liệu.</td></tr>
+<tr><td>Pruning</td><td>Bỏ qua tệp/row group/page nhờ thống kê min/max, Bloom filter.</td></tr>
+<tr><td>Late materialization</td><td>Chỉ giải mã cột khác cho những dòng đã qua bộ lọc.</td></tr>
+<tr><td>RowFormat / normalized key</td><td>Mã hoá nhiều cột thành chuỗi byte so sánh được bằng memcmp.</td></tr>
+<tr><td>Two-phase aggregation</td><td>Gom cục bộ từng partition, chia lại theo hash, gom cuối.</td></tr>
+<tr><td>Selectivity / Cardinality</td><td>Tỷ lệ dòng qua bộ lọc / số dòng hoặc số nhóm.</td></tr>
+<tr><td>UDF / UDAF / UDWF</td><td>Hàm scalar / aggregate / window do người dùng định nghĩa.</td></tr>
+<tr><td>TableProvider</td><td>API để biến bất kỳ nguồn dữ liệu nào thành “bảng” truy vấn được.</td></tr>
+<tr><td>OptimizerRule</td><td>Luật viết lại kế hoạch logic; PhysicalOptimizerRule cho kế hoạch vật lý.</td></tr>
+<tr><td>Tokio / work-stealing</td><td>Runtime async Rust; luồng rảnh lấy việc của luồng bận.</td></tr>
+<tr><td>Substrait</td><td>Chuẩn trao đổi kế hoạch truy vấn giữa các engine.</td></tr>
+<tr><td>Deconstructed / composable DB</td><td>CSDL lắp ráp từ các thành phần thay thế được.</td></tr>
+</table>
+<p class="small" style="margin-top:6mm">Soạn để học môn Hệ CSDL tiên tiến. Các khối “Bằng chứng chạy thật” được chạy trên DataFusion 50.1.0 (Python), dữ liệu tự sinh – số liệu đó không phải của bài báo.</p>
+</main>
+</body>
+</html>

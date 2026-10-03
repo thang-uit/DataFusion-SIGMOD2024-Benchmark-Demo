@@ -1,0 +1,25 @@
+# Local operating-system files
+.DS_Store
+._*
+
+# Original paper and translation: local study copies only
+/00-paper/*.pdf
+
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Generated datasets and browser test artifacts
+/04-demo/data/
+/.playwright-cli/
+/output/
