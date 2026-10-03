@@ -6,6 +6,8 @@
 >
 > Số trang ghi “tr. X” là trang PDF của bài gốc (1–13).
 
+Tài liệu phục vụ học tập và nghiên cứu, không phải công bố của nhóm tác giả. Các ý tưởng, thuật toán và kết quả của bài báo được ghi nhận theo nguồn trên, không được nhận là đóng góp mới của người soạn. Diễn giải, ví dụ bổ sung và hướng dẫn thực hành nhằm hỗ trợ đọc hiểu, không thay thế bài báo gốc.
+
 ---
 
 ## 1. Bài báo này thuộc loại gì?

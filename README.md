@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <b>🇻🇳 Tiếng Việt</b> &nbsp;·&nbsp; <a href="#-english">🇬🇧 English</a>
+  <b>🇻🇳 Tiếng Việt</b> &nbsp;·&nbsp; <a href="#--english">🇬🇧 English</a>
 </p>
 
 ---
@@ -21,6 +21,12 @@
 
 Bộ tài liệu **đọc hiểu bài báo** *Apache Arrow DataFusion: A Fast, Embeddable, Modular Analytic Query Engine* (Lamb et al., **SIGMOD-Companion ’24**), soạn cho môn **Hệ cơ sở dữ liệu tiên tiến**. Mục tiêu: ai đọc cũng hiểu bài báo nói gì, vì sao, và tự làm lại được phần minh hoạ.
 
+### Mục đích và ghi nhận nguồn
+
+Dự án phục vụ **học tập và nghiên cứu**, thông qua việc đọc hiểu, phân tích và thực hành các cơ chế được trình bày trong bài báo. Dự án không phải tài liệu chính thức của nhóm tác giả hay Apache DataFusion, không nhằm sao chép hoặc nhận các ý tưởng, thuật toán và kết quả của tác giả là đóng góp của người soạn.
+
+Các hình, bảng và số liệu được trích để phân tích, có ghi nguồn bài báo. Phần diễn giải tiếng Việt, mô hình tương tác và hướng dẫn thực hành là nội dung bổ trợ do người soạn xây dựng; không thay thế bài báo gốc. Mô phỏng trên trang web không trực tiếp thực thi DataFusion. Kết quả thực hành phải được phân biệt với số liệu trong bài báo, ghi rõ phiên bản phần mềm, dữ liệu và điều kiện thí nghiệm. Việc ghi mục đích học tập không thay thế yêu cầu tuân thủ giấy phép và quyền sử dụng của từng nguồn.
+
 > **Bài báo nói gì, trong một câu:** muốn làm một hệ phân tích dữ liệu mới thì **không cần viết lại “bộ máy truy vấn” từ đầu** — DataFusion là bộ máy mở, lắp ghép được, cho cắm thêm phần riêng ở hơn 10 chỗ, và đo thực nghiệm cho thấy nó **nhanh ngang DuckDB**.
 
 ### 🌐 Xem ngay
@@ -28,7 +34,7 @@ Bộ tài liệu **đọc hiểu bài báo** *Apache Arrow DataFusion: A Fast, E
 | | |
 |---|---|
 | **Trang web tương tác** | [`03-website/index.html`](03-website/index.html) — mở bằng trình duyệt là chạy, không cần cài gì |
-| **Bản online** | `https://thang-uit.github.io/DataFusion-SIGMOD2024-Benchmark-Demo/` *(sau khi bật GitHub Pages — xem [cách bật](#-bật-bản-online-github-pages))* |
+| **Bản online** | `https://thang-uit.github.io/DataFusion-SIGMOD2024-Benchmark-Demo/` *(sau khi bật GitHub Pages — xem [cách bật](#--bật-bản-online-github-pages))* |
 | **Bản đọc hiểu PDF** | [`01-reading-guide/DataFusion-ban-doc-hieu.pdf`](01-reading-guide/DataFusion-ban-doc-hieu.pdf) — đi đúng thứ tự từng mục của bài |
 | **Giải thích chi tiết** | [`02-explainer/GIAI-THICH-BAI-BAO.md`](02-explainer/GIAI-THICH-BAI-BAO.md) — vấn đề, giải pháp, SOTA, phê phán, khung báo cáo |
 | **Hướng dẫn tự code demo** | [`04-demo/README.md`](04-demo/README.md) — 8 bài demo, dữ liệu nhỏ, kết quả mong đợi, câu thầy có thể hỏi |
@@ -157,6 +163,12 @@ jupyter lab
 ### 📖 What is this?
 
 A **study companion** for the paper *Apache Arrow DataFusion: A Fast, Embeddable, Modular Analytic Query Engine* (Lamb et al., **SIGMOD-Companion ’24**), prepared for an *Advanced Database Systems* course (written in Vietnamese).
+
+### Educational purpose and attribution
+
+This project is for **learning and research** through reading, analysis and practical exploration of the paper. It is not an official publication of the paper's authors or Apache DataFusion and does not claim their ideas, algorithms or results as the preparer's own contributions.
+
+Figures, tables and measurements are quoted for analysis with attribution. Vietnamese explanations, interactive models and practice guides are supplementary material, not a replacement for the original paper. Browser simulations do not execute DataFusion. Results from independent experiments must be distinguished from the paper's measurements and identify the software versions, data and experimental conditions. Educational intent does not replace applicable licences or permissions.
 
 > **The paper in one sentence:** you no longer need to build a query engine from scratch to create a new data system — DataFusion is an open, modular engine with 10+ extension points, and experiments show it performs **on par with DuckDB**.
 

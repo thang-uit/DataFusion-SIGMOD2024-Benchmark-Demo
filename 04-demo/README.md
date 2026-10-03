@@ -1,5 +1,7 @@
 # Hướng dẫn tự code demo DataFusion
 
+Hướng dẫn phục vụ học tập và nghiên cứu bài báo *Apache Arrow DataFusion: A Fast, Embeddable, Modular Analytic Query Engine* ([DOI](https://doi.org/10.1145/3626246.3653368)). Thực hành nhằm tìm hiểu và tái hiện các cơ chế đã được công bố, không nhận ý tưởng hoặc kết quả của tác giả là đóng góp mới. Kết quả do nhóm tự đo cần ghi rõ môi trường, dữ liệu và phương pháp; không được trình bày như số liệu của bài báo.
+
 Tài liệu này **không có lời giải sẵn**. Nó cho bạn: demo cần chứng minh điều gì, làm theo bước nào, API nào hay vướng, chạy đúng thì sẽ thấy gì, và thầy có thể hỏi gì. Phần ráp code là của bạn — như vậy bạn hiểu từng dòng khi trình bày.
 
 Mọi “kết quả mong đợi” bên dưới đã được kiểm chứng trên máy soạn (macOS Intel, Python 3.9, DataFusion 50.1.0, DuckDB 1.4.5). Số giây trên máy bạn sẽ khác; còn **cơ chế** (tên toán tử, số row group bị bỏ, kích thước batch…) thì giống nhau.
