@@ -1,18 +1,56 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360" viewBox="0 0 1280 360">
-  <title>Sổ tay DataFusion — đọc hiểu bài báo SIGMOD-Companion 2024</title>
-  <rect width="1280" height="360" rx="24" fill="#fff4c4"/>
-  <path d="M860 0h420v360H860" fill="#ffe797"/>
-  <g font-family="Arial, sans-serif" fill="#282318">
-    <text x="64" y="76" font-size="18" letter-spacing="3">SIGMOD-COMPANION 2024</text>
-    <text x="60" y="165" font-size="64" font-weight="700">Sổ tay DataFusion</text>
-    <text x="64" y="218" font-size="27">Đọc hiểu bài báo · Quan sát cơ chế · Tự thực hành</text>
-    <text x="64" y="295" font-size="18" fill="#6b6250">Apache Arrow · Parquet · Bộ máy truy vấn phân tích</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 340" width="1200" height="340" role="img" aria-label="Sổ tay DataFusion — đọc hiểu bài báo SIGMOD-Companion 2024">
+  <style>
+    .bg { fill: #fffbe6; }
+    .ink { fill: #1e2633; }
+    .sub { fill: #4d5566; }
+    .t1 { font: 800 58px 'Be Vietnam Pro', 'Segoe UI', Helvetica, Arial, sans-serif; }
+    .t2 { font: 600 24px 'Be Vietnam Pro', 'Segoe UI', Helvetica, Arial, sans-serif; }
+    .t3 { font: 500 17px 'Be Vietnam Pro', 'Segoe UI', Helvetica, Arial, sans-serif; }
+    .chip { fill: #ffdf5c; }
+    .inkcol { fill: #1e2633; }
+    .col { transform-box: fill-box; transform-origin: bottom; animation: rise 3.6s cubic-bezier(.2,.8,.2,1) infinite; }
+    .c2 { animation-delay: .25s; } .c3 { animation-delay: .5s; } .c4 { animation-delay: .75s; } .c5 { animation-delay: 1s; }
+    @keyframes rise { 0% { transform: scaleY(.15); opacity: .3; } 35%, 80% { transform: scaleY(1); opacity: 1; } 100% { transform: scaleY(.15); opacity: .3; } }
+    .arc { stroke-dasharray: 520; stroke-dashoffset: 520; animation: draw 3.6s ease-in-out infinite; }
+    @keyframes draw { 0%, 10% { stroke-dashoffset: 520; } 45%, 85% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 520; } }
+    .batch { animation: flow 3.6s linear infinite; }
+    .b2 { animation-delay: 1.2s; } .b3 { animation-delay: 2.4s; }
+    @keyframes flow { 0% { transform: translateX(0); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateX(300px); opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { .col, .arc, .batch { animation: none; stroke-dashoffset: 0; } }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #17150f; } .ink { fill: #f5edd3; } .sub { fill: #cfc6a2; } .chip { fill: #e9c64a; }
+      .chiptext { fill: #17150f; } .line { stroke: #f5edd3; } .inkcol { fill: #f5edd3; }
+    }
+  </style>
+  <rect class="bg" width="1200" height="340" rx="24"/>
+  <!-- logo mark -->
+  <g transform="translate(64 64) scale(1.6)">
+    <rect x="2" y="2" width="60" height="60" rx="16" fill="#FFDF5C"/>
+    <rect x="12.5" y="31" width="10" height="21" rx="3.5" fill="#2E8B57"/>
+    <rect x="27" y="23" width="10" height="29" rx="3.5" fill="#2B59E8"/>
+    <rect x="41.5" y="15" width="10" height="37" rx="3.5" fill="#1E2633"/>
+    <path d="M10 26 C 20 13, 33 10, 47 9" fill="none" stroke="#1E2633" stroke-width="3.6" stroke-linecap="round"/>
+    <path d="M41.5 5.2 L 48.4 8.8 L 43.2 14.4" fill="none" stroke="#1E2633" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
-  <g stroke="#282318" stroke-width="3" stroke-linejoin="round">
-    <path d="m935 116 111-42 112 42-112 43Z" fill="#ffdf5c"/>
-    <path d="m935 116 111 43v41l-111-43Z" fill="#e9b92b"/>
-    <path d="m1046 159 112-43v41l-112 43Z" fill="#f5cd3a"/>
-    <path d="m935 181 111 42 112-42v41l-112 43-111-43Z" fill="#fff8df"/>
-    <path d="m935 246 111 42 112-42" fill="none"/>
+  <text class="ink t1" x="190" y="118">Sổ tay DataFusion</text>
+  <text class="sub t2" x="192" y="160">Đọc hiểu bài báo Apache Arrow DataFusion · SIGMOD ’24</text>
+  <g transform="translate(192 186)">
+    <rect class="chip" width="236" height="34" rx="17"/><text class="ink t3 chiptext" x="118" y="23" text-anchor="middle">Engine mở, lắp ghép được</text>
+    <rect class="chip" x="248" width="196" height="34" rx="17"/><text class="ink t3 chiptext" x="346" y="23" text-anchor="middle">Nhanh ngang DuckDB</text>
+    <rect class="chip" x="456" width="160" height="34" rx="17"/><text class="ink t3 chiptext" x="536" y="23" text-anchor="middle">Arrow · Parquet</text>
+  </g>
+  <text class="sub t3" x="192" y="270">Web tương tác · Bản đọc hiểu PDF · Giải thích chi tiết · Hướng dẫn tự code demo</text>
+  <!-- animated columns (Arrow columns rising like a speed chart) -->
+  <g transform="translate(930 92) scale(.85)">
+    <rect class="col c1" x="0" y="120" width="34" height="90" rx="8" fill="#6f7480"/>
+    <rect class="col c2" x="48" y="80" width="34" height="130" rx="8" fill="#2E8B57"/>
+    <rect class="col c3" x="96" y="50" width="34" height="160" rx="8" fill="#2B59E8"/>
+    <rect class="col c4" x="144" y="95" width="34" height="115" rx="8" fill="#D9741A"/>
+    <rect class="col c5 inkcol" x="192" y="20" width="34" height="190" rx="8"/>
+    <path class="arc line" d="M-10 110 C 60 20, 150 0, 250 -5" fill="none" stroke="#1E2633" stroke-width="5" stroke-linecap="round"/>
+    <!-- record batches flowing along the bottom -->
+    <rect class="batch b1" x="-30" y="232" width="40" height="14" rx="4" fill="#8c6fd1"/>
+    <rect class="batch b2" x="-30" y="232" width="40" height="14" rx="4" fill="#8c6fd1"/>
+    <rect class="batch b3" x="-30" y="232" width="40" height="14" rx="4" fill="#8c6fd1"/>
   </g>
 </svg>
