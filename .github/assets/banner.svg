@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360" viewBox="0 0 1280 360">
+  <title>Sổ tay DataFusion — đọc hiểu bài báo SIGMOD-Companion 2024</title>
+  <rect width="1280" height="360" rx="24" fill="#fff4c4"/>
+  <path d="M860 0h420v360H860" fill="#ffe797"/>
+  <g font-family="Arial, sans-serif" fill="#282318">
+    <text x="64" y="76" font-size="18" letter-spacing="3">SIGMOD-COMPANION 2024</text>
+    <text x="60" y="165" font-size="64" font-weight="700">Sổ tay DataFusion</text>
+    <text x="64" y="218" font-size="27">Đọc hiểu bài báo · Quan sát cơ chế · Tự thực hành</text>
+    <text x="64" y="295" font-size="18" fill="#6b6250">Apache Arrow · Parquet · Bộ máy truy vấn phân tích</text>
+  </g>
+  <g stroke="#282318" stroke-width="3" stroke-linejoin="round">
+    <path d="m935 116 111-42 112 42-112 43Z" fill="#ffdf5c"/>
+    <path d="m935 116 111 43v41l-111-43Z" fill="#e9b92b"/>
+    <path d="m1046 159 112-43v41l-112 43Z" fill="#f5cd3a"/>
+    <path d="m935 181 111 42 112-42v41l-112 43-111-43Z" fill="#fff8df"/>
+    <path d="m935 246 111 42 112-42" fill="none"/>
+  </g>
+</svg>

@@ -94,7 +94,7 @@ flowchart LR
 
 ```
 .
-├── 00-paper/              Thông tin bài gốc + link DOI (tệp PDF không đưa lên repo, xem phần Bản quyền)
+├── 00-paper/              Thông tin bài gốc + link DOI
 ├── 01-reading-guide/      Bản đọc hiểu từng mục (PDF A4) + nguồn HTML
 ├── 02-explainer/          Giải thích chi tiết + khung báo cáo 5–7 trang
 ├── 03-website/            Trang web đọc hiểu tương tác
@@ -133,11 +133,9 @@ jupyter lab
 2. Mục **Source** chọn *Deploy from a branch* → nhánh `main`, thư mục `/ (root)` → **Save**.
 3. Sau khoảng 1 phút, trang có tại `https://thang-uit.github.io/DataFusion-SIGMOD2024-Benchmark-Demo/` (tệp `index.html` ở gốc tự chuyển vào `03-website/`).
 
-### ⚖️ Bản quyền và trích dẫn
+### 📚 Trích dẫn bài báo
 
-- Bài báo thuộc quyền xuất bản của **ACM**, không phải giấy phép mở. Vì vậy **tệp PDF bài gốc và bản dịch không được đưa lên repo công khai này**; hãy đọc bài qua [DOI](https://doi.org/10.1145/3626246.3653368).
-- Toàn bộ nội dung trong repo là **diễn giải và chú giải** của người soạn, không phải bản dịch nguyên văn. Các hình trích từ bài được dùng để bình luận học thuật và đều ghi nguồn.
-- Các khối “Chạy thật” trên trang web là output của DataFusion 50.1 với dữ liệu tự sinh, không phải số liệu của bài.
+Đọc bài báo qua [DOI](https://doi.org/10.1145/3626246.3653368). Các khối “Chạy thật” trên trang web là kết quả của DataFusion 50.1 với dữ liệu tự sinh, không phải số liệu của bài báo.
 
 ```bibtex
 @inproceedings{lamb2024datafusion,
@@ -183,10 +181,8 @@ A **study companion** for the paper *Apache Arrow DataFusion: A Fast, Embeddable
 
 The paper has no application demo; Section 8 is a benchmark study. Every mechanism it describes can be reproduced **for real** on small data. See the 8 exercises in [`04-demo/README.md`](04-demo/README.md) (SQL vs DataFrame, plan lifecycle, batches and partitions, Parquet pruning, sort-order exploitation, spilling, UDFs, and a mini TPC-H benchmark against DuckDB using the authors' measurement method).
 
-### ⚖️ Copyright and citation
+### 📚 Paper citation
 
-- The paper's publication rights belong to **ACM** (not an open licence). **The original PDF and any translation are deliberately not included** in this public repository — read the paper via its [DOI](https://doi.org/10.1145/3626246.3653368).
-- All material here is the author's own explanation and commentary, not a verbatim translation. Figures cropped from the paper are quoted for academic commentary with attribution.
-- Cite the paper with the BibTeX entry above.
+Read the paper via its [DOI](https://doi.org/10.1145/3626246.3653368) and cite it with the BibTeX entry above.
 
 <p align="center"><sub>Made for learning · Không vì mục đích thương mại</sub></p>
