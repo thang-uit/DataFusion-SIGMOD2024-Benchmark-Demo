@@ -26,5 +26,21 @@ __pycache__/
 
 # Generated datasets and browser test artifacts
 /04-demo/data/
+/04-demo/results/
 /.playwright-cli/
 /output/
+
+# HyperFrames-generated previews, caches and review snapshots
+/.hyperframes/
+/video-q6-preview/.hyperframes/
+/video-q6-preview/.thumbnails/
+/video-q6-preview/.waveform-cache/
+/video-q6-preview/snapshots/
+/video-q6-preview/AGENTS.md
+/video-q6-preview/CLAUDE.md
+/video-q6-preview/voice-namminh-q6.mp3
+/video-q6-preview/voice-namminh-q6.srt
+/video-q6-preview/voice-preview-namminh.mp3
+/video-q6-preview/tts-q8-parts/
+/video-q6-preview/tts-q8-concat.txt
+/video-q6-preview/transcript.json

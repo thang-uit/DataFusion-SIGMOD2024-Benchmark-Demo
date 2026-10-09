@@ -35,9 +35,10 @@ Các hình, bảng và số liệu được trích để phân tích, có ghi ng
 |---|---|
 | **Trang web tương tác** | [`03-website/index.html`](03-website/index.html) — mở bằng trình duyệt là chạy, không cần cài gì |
 | **Bản online** | `https://thang-uit.github.io/DataFusion-SIGMOD2024-Benchmark-Demo/` *(sau khi bật GitHub Pages — xem [cách bật](#--bật-bản-online-github-pages))* |
+| **Video giải thích Q8** | Đã nhúng ngay trong mục ClickBench Q8 của trang web; tệp MP4 nằm tại [`03-website/assets/video/clickbench-q8-datafusion-parquet.mp4`](03-website/assets/video/clickbench-q8-datafusion-parquet.mp4) |
 | **Bản đọc hiểu PDF** | [`01-reading-guide/DataFusion-ban-doc-hieu.pdf`](01-reading-guide/DataFusion-ban-doc-hieu.pdf) — đi đúng thứ tự từng mục của bài |
 | **Giải thích chi tiết** | [`02-explainer/GIAI-THICH-BAI-BAO.md`](02-explainer/GIAI-THICH-BAI-BAO.md) — vấn đề, giải pháp, SOTA, phê phán, khung báo cáo |
-| **Hướng dẫn tự code demo** | [`04-demo/README.md`](04-demo/README.md) — 8 bài demo, dữ liệu nhỏ, kết quả mong đợi, câu thầy có thể hỏi |
+| **Hướng dẫn tự thực hành** | [`04-demo/README.md`](04-demo/README.md) — notebook chỉ có hướng dẫn và ô mã trống, dùng Homebrew Python 3.13.15; không có lời giải sẵn |
 
 ### 🖼️ Trang web trông như thế nào
 
@@ -92,6 +93,7 @@ flowchart LR
   - biểu đồ Bảng 1, đường cong mở rộng theo số lõi.
 - Ảnh chụp đầy đủ các hình và bảng của bài (bấm để phóng to), tra thuật ngữ, 9 câu tự kiểm tra.
 - Giao diện sáng/tối, responsive, đạt Lighthouse **Accessibility 100**. Hiệu ứng chỉ dùng `transform`/`opacity` và tự tắt khi bật *Reduce motion*.
+- **Video ClickBench Q8 có thuyết minh** được nhúng trực tiếp trên web, giải thích điều kiện truy vấn, thống kê Parquet, lô dữ liệu Arrow và giới hạn của kết luận trong bài báo.
 - Không dùng thư viện ngoài: HTML + CSS + JavaScript thuần, chạy được cả khi offline.
 
 </details>
@@ -104,8 +106,9 @@ flowchart LR
 ├── 01-reading-guide/      Bản đọc hiểu từng mục (PDF A4) + nguồn HTML
 ├── 02-explainer/          Giải thích chi tiết + khung báo cáo 5–7 trang
 ├── 03-website/            Trang web đọc hiểu tương tác
-│   └── assets/            css/ · js/ · img/ (logo, hình trích từ bài: PNG + WebP)
-├── 04-demo/               Hướng dẫn tự code demo bằng Jupyter
+│   └── assets/            css/ · js/ · img/ · video/ (video giải thích ClickBench Q8)
+├── 04-demo/               Hướng dẫn + notebook trống để tự viết D1–D8
+├── video-q6-preview/      Mã nguồn HyperFrames và lời đọc để dựng lại video Q8
 ├── tools/                 Script cắt hình từ PDF, build lại PDF đọc hiểu
 ├── .github/assets/        Banner + ảnh chụp màn hình cho README
 └── index.html             Lối vào cho GitHub Pages (tự chuyển tới 03-website/)
@@ -113,31 +116,38 @@ flowchart LR
 
 ### 🧪 Demo
 
-Bài báo **không có demo ứng dụng**; mục 8 là thí nghiệm benchmark. Vì DataFusion là mã nguồn mở, mọi cơ chế trong bài đều **chạy thật** được với dữ liệu nhỏ, không cần 14 GB như bài. [`04-demo/README.md`](04-demo/README.md) hướng dẫn tự code 8 bài, mỗi bài gắn với một mục:
+Bài báo có đoạn Rust minh họa ở Hình 3 và dẫn đến mã thí nghiệm đo hiệu năng tại mục 8, nhưng không cung cấp notebook hướng dẫn D1–D8 này. [`04-demo/README.md`](04-demo/README.md) hướng dẫn tự viết mã trong notebook có ô trống, không có chương trình làm sẵn. Khi dùng thư viện DataFusion để chạy truy vấn, đó là thực nghiệm thật; hoạt ảnh trên trang HTML chỉ là mô phỏng giải thích. Dữ liệu nhỏ không tái lập kết luận hiệu năng ở quy mô của bài báo. Mỗi phần thực hành gắn với một mục:
 
 | Demo | Chứng minh | Mục |
 |---|---|---|
 | D1 · SQL và DataFrame | Hai cách viết cho cùng một kế hoạch | 5.3.3 |
 | D2 · Vòng đời truy vấn | Pushdown, Top K, gom nhóm hai pha trong `EXPLAIN` | 5.1, 6.1–6.3 |
 | D3 · Batch và partition | 8192 dòng/lô, song song hoá | 5.5 |
-| D4 · Pruning Parquet | 8/10 row group bị bỏ khi dữ liệu đã sắp | 6.8 |
-| D5 · Thứ tự sắp | Bỏ sort thừa, bộ nhớ giảm hơn trăm lần | 6.7 |
+| D4 · Pruning Parquet | So số nhóm dòng bị bỏ với dữ liệu đã sắp và xáo trộn | 6.8 |
+| D5 · Thứ tự sắp | Kiểm tra loại bỏ sắp xếp thừa và lượng bộ nhớ gom nhóm | 6.7 |
 | D6 · Spill | Hết RAM thì ghi tạm ra đĩa | 5.5.4 |
 | D7 · UDF | Hàm tự viết nhận cả lô Arrow | 7.1 |
-| D8 · So với DuckDB | Mini benchmark TPC-H theo đúng phương pháp đo của tác giả | 8 |
+| D8 · So với DuckDB | Thí nghiệm TPC-H nhỏ, đối chiếu giá trị trước khi so thời gian | 8 |
 
 ```bash
 cd 04-demo
-python3 -m venv .venv && source .venv/bin/activate
-pip install datafusion duckdb pyarrow pandas matplotlib jupyterlab
-jupyter lab
+/opt/homebrew/bin/python3.13 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m ipykernel install --prefix .venv --name datafusion-py313 --display-name "DataFusion · Python 3.13.15"
+.venv/bin/python -m jupyterlab DataFusion_TuThucHanh.ipynb --ip=127.0.0.1
 ```
 
-### 🚀 Bật bản online (GitHub Pages)
+### 🚀 Đưa trang lên mạng bằng GitHub Pages
 
-1. Vào **Settings → Pages**.
-2. Mục **Source** chọn *Deploy from a branch* → nhánh `main`, thư mục `/ (root)` → **Save**.
-3. Sau khoảng 1 phút, trang có tại `https://thang-uit.github.io/DataFusion-SIGMOD2024-Benchmark-Demo/` (tệp `index.html` ở gốc tự chuyển vào `03-website/`).
+GitHub Pages sẽ xuất bản các tệp tĩnh trong nhánh đã chọn. Kho mã này đã có `index.html` ở thư mục gốc; tệp đó tự chuyển người đọc đến `03-website/`. Video Q8 được lưu trong kho và phát trực tiếp từ thư mục tài sản của trang, nên không cần máy chủ video riêng.
+
+1. Mở kho mã trên GitHub, vào **Settings → Pages**.
+2. Ở **Build and deployment**, chọn **Deploy from a branch**.
+3. Chọn nhánh **`main`** và thư mục **`/ (root)`**, sau đó nhấn **Save**.
+4. Mở thẻ **Actions** để theo dõi tác vụ xuất bản. Khi tác vụ Pages hoàn tất, trang có tại [`https://thang-uit.github.io/DataFusion-SIGMOD2024-Benchmark-Demo/`](https://thang-uit.github.io/DataFusion-SIGMOD2024-Benchmark-Demo/). Lần xuất bản đầu có thể mất vài phút.
+5. Nếu vừa push commit mới, chờ tác vụ Pages của commit đó hoàn tất rồi tải lại trang. Khi trình duyệt còn giữ bản cũ, tải lại mạnh hoặc mở cửa sổ riêng tư để kiểm tra.
+
+Nếu GitHub không cho chọn nhánh `main`, hãy bảo đảm commit đã được push lên GitHub và có tệp `index.html` tại thư mục gốc; sau đó tải lại trang **Settings → Pages**.
 
 ### 📚 Trích dẫn bài báo
 
@@ -178,20 +188,31 @@ Figures, tables and measurements are quoted for analysis with attribution. Vietn
 |---|---|
 | **Interactive website** | [`03-website/index.html`](03-website/index.html) — open it in any browser, no build step, works offline |
 | **Online version** | `https://thang-uit.github.io/DataFusion-SIGMOD2024-Benchmark-Demo/` *(once GitHub Pages is enabled: Settings → Pages → `main` / root)* |
+| **Q8 explainer video** | Embedded in the ClickBench Q8 section; MP4 source: [`03-website/assets/video/clickbench-q8-datafusion-parquet.mp4`](03-website/assets/video/clickbench-q8-datafusion-parquet.mp4) |
 | **Reading guide (PDF)** | [`01-reading-guide/DataFusion-ban-doc-hieu.pdf`](01-reading-guide/DataFusion-ban-doc-hieu.pdf) — section-by-section annotated walkthrough |
 | **Explainer** | [`02-explainer/GIAI-THICH-BAI-BAO.md`](02-explainer/GIAI-THICH-BAI-BAO.md) — problem, solution, state of the art, critique, report outline |
-| **Demo guide** | [`04-demo/README.md`](04-demo/README.md) — 8 hands-on exercises with small data, expected results and likely examiner questions |
+| **Demo guide** | [`04-demo/README.md`](04-demo/README.md) — guided Jupyter notebooks with blank code cells, configured for Homebrew Python 3.13.15 |
 
 ### ✨ Website highlights
 
 - Follows the paper's **11 sections** in order. Each chapter opens with a plain-language “in everyday terms” box.
 - **20+ interactive models.** Examples: the query “factory”, row vs column layout, Figure 2 architecture explorer, query lifecycle with real `EXPLAIN` output, pull-based RecordBatch flow, Greedy vs Fair memory pools, two-phase aggregation, RowFormat encoder, the “labelled warehouse” and 4-step Parquet pruning, and the Table 1 chart.
 - Light/dark themes, responsive down to 320 px, Lighthouse **Accessibility 100**. Animations use only `transform`/`opacity` and respect *prefers-reduced-motion*.
+- A narrated ClickBench Q8 explainer video is embedded on the page and committed under `03-website/assets/video/`.
 - Zero dependencies: plain HTML, CSS and JavaScript.
+
+### 🌐 Publish with GitHub Pages
+
+1. Open the repository's **Settings → Pages**.
+2. Under **Build and deployment**, choose **Deploy from a branch**.
+3. Select branch **`main`** and folder **`/ (root)`**, then click **Save**.
+4. Follow the deployment job under **Actions**. Once it completes, the site is available at [`https://thang-uit.github.io/DataFusion-SIGMOD2024-Benchmark-Demo/`](https://thang-uit.github.io/DataFusion-SIGMOD2024-Benchmark-Demo/).
+
+The root `index.html` redirects visitors to `03-website/`. The Q8 MP4 is committed with the site and plays directly from its assets folder; no separate video host is required. The initial deployment may take a few minutes. After a new push, wait for the Pages job to finish and hard-refresh the browser if it still shows a cached version.
 
 ### 🧪 Demo
 
-The paper has no application demo; Section 8 is a benchmark study. Every mechanism it describes can be reproduced **for real** on small data. See the 8 exercises in [`04-demo/README.md`](04-demo/README.md) (SQL vs DataFrame, plan lifecycle, batches and partitions, Parquet pruning, sort-order exploitation, spilling, UDFs, and a mini TPC-H benchmark against DuckDB using the authors' measurement method).
+The paper includes a Rust illustration in Figure 3 and links to benchmark scripts in Section 8. [`04-demo/README.md`](04-demo/README.md) provides guided Jupyter notebooks with instructions and empty code cells, configured for Homebrew Python 3.13.15 on macOS ARM64. There are no prewritten solutions. Code written using DataFusion runs the real engine; the HTML animations are explanatory simulations. Small-data experiments do not reproduce the paper's full benchmark setup or performance conclusions.
 
 ### 📚 Paper citation
 

@@ -1,0 +1,91 @@
+1
+00:00:00,100 --> 00:00:09,705
+ClickBench Q8 là một trong những truy vấn DataFusion chạy nhanh hơn trong phép đo của bài báo: không phẩy ba bảy giây, so với không phẩy tám ba giây của DuckDB.
+
+2
+00:00:09,655 --> 00:00:15,957
+Chênh lệch là hai phẩy hai bốn lần, trên một lõi và bộ dữ liệu ClickBench mười bốn ghi-ga-bai.
+
+3
+00:00:16,060 --> 00:00:23,257
+Truy vấn lấy mã bộ máy quảng cáo khác không, đếm số dòng theo từng mã, rồi xếp số đếm từ cao xuống thấp.
+
+4
+00:00:23,308 --> 00:00:26,439
+Điểm đáng chú ý nằm ở điều kiện lọc.
+
+5
+00:00:26,389 --> 00:00:29,626
+Parquet chia dữ liệu thành các nhóm dòng.
+
+6
+00:00:29,626 --> 00:00:35,442
+Với mỗi nhóm, thông tin thống kê có thể cho biết giá trị nhỏ nhất và lớn nhất của một cột.
+
+7
+00:00:35,442 --> 00:00:41,126
+Nếu cả hai đều bằng không, chắc chắn nhóm đó không có dòng nào thỏa điều kiện khác không.
+
+8
+00:00:41,126 --> 00:00:45,902
+Bộ đọc có thể bỏ qua cả nhóm mà không giải mã dữ liệu của nhóm ấy.
+
+9
+00:00:46,012 --> 00:00:51,577
+Nếu khoảng giá trị là từ không đến chín, thống kê không đủ để bỏ cả nhóm.
+
+10
+00:00:51,527 --> 00:00:54,172
+Bộ đọc phải kiểm tra từng dòng.
+
+11
+00:00:54,172 --> 00:00:59,054
+Còn nếu nhỏ nhất lớn hơn không, mọi dòng trong nhóm đều thỏa điều kiện.
+
+12
+00:00:59,164 --> 00:01:02,558
+Đây là cơ chế lọc đẩy xuống bộ đọc Parquet.
+
+13
+00:01:02,508 --> 00:01:07,850
+Tác giả cho rằng đây có thể là lý do DataFusion có lợi thế ở Q8.
+
+14
+00:01:07,850 --> 00:01:17,035
+Nhưng bài báo không công bố kế hoạch thực thi hay số nhóm thực tế bị bỏ; các nhóm trên màn hình chỉ minh họa nguyên lý, không phải số liệu của bộ dữ liệu.
+
+15
+00:01:17,140 --> 00:01:20,705
+DuckDB cũng hỗ trợ đọc Parquet và lọc dữ liệu.
+
+16
+00:01:20,655 --> 00:01:27,313
+Bài báo không chứng minh DuckDB thiếu cơ chế này; tác giả còn dự đoán DuckDB có thể cải thiện thêm ở lọc Parquet.
+
+17
+00:01:27,313 --> 00:01:35,774
+Vì vậy, kết quả phản ánh hai bản hiện thực tại thời điểm năm hai nghìn không trăm hai mươi bốn, không phải kết luận DataFusion luôn nhanh hơn.
+
+18
+00:01:35,884 --> 00:01:41,962
+Sau khi đọc, Apache Arrow biểu diễn các cột trong bộ nhớ thành những mảng và lô dữ liệu.
+
+19
+00:01:41,912 --> 00:01:47,636
+DataFusion dùng chúng trong các bước lọc, đếm, gom nhóm và sắp xếp.
+
+20
+00:01:47,636 --> 00:01:55,162
+Arrow là nền tảng xử lý chung, nhưng bài báo không tách riêng tác động của Arrow để kết luận nó tạo ra chênh lệch Q8.
+
+21
+00:01:55,276 --> 00:02:05,104
+Tóm lại: Parquet có thể giúp giảm lượng dữ liệu phải đọc; Arrow tổ chức dữ liệu đã đọc để xử lý; DataFusion lập kế hoạch và thực hiện các phép toán.
+
+22
+00:02:05,054 --> 00:02:08,581
+Con số không phẩy ba bảy giây là kết quả đo.
+
+23
+00:02:08,581 --> 00:02:14,831
+Cơ chế bỏ nhóm là lời giải thích có khả năng, không phải một phép đo đã được bài báo chứng minh riêng.

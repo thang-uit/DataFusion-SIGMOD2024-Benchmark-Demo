@@ -1,0 +1,8 @@
+# Wheels compatible with Homebrew CPython 3.13 on macOS ARM64.
+datafusion==50.1.0
+duckdb==1.4.5
+pyarrow==21.0.0
+numpy==2.3.3
+# Notebook editor and Python kernel; no prewritten demo implementation.
+jupyterlab==4.6.4
+ipykernel==7.4.0

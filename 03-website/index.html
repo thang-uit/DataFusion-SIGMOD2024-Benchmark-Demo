@@ -75,7 +75,7 @@
         <ol><li><a href="#s6-1">6.1 Viết lại truy vấn</a></li><li><a href="#s6-2">6.2–6.5 Sort, group, join, window</a></li><li><a href="#s6-6">6.6 RowFormat</a></li><li><a href="#s6-7">6.7 Tận dụng thứ tự</a></li><li><a href="#s6-8">6.8 Pushdown &amp; late materialization</a></li></ol></li>
       <li><a href="#s7"><span class="num">7</span>Các điểm mở rộng</a></li>
       <li><a href="#s8"><span class="num">8</span>Đánh giá hiệu năng</a>
-        <ol><li><a href="#s8-1">8.1 Một lõi</a></li><li><a href="#s8-2">8.2 Nhiều lõi</a></li></ol></li>
+        <ol><li><a href="#s8-1">8.1 Một lõi</a></li><li><a href="#s8-q8">ClickBench Q8: Parquet lọc thế nào?</a></li><li><a href="#s8-cases">Q6 và Q18: vì sao khác?</a></li><li><a href="#s8-2">8.2 Nhiều lõi</a></li></ol></li>
       <li><a href="#s9"><span class="num">9</span>Công trình liên quan</a></li>
       <li><a href="#s10"><span class="num">10</span>Kết luận</a></li>
     </ol>
@@ -814,9 +814,74 @@ ctx.sql(<span class="s">"SELECT a, double_it(a) AS d FROM t LIMIT 3"</span>).sho
           <figcaption><b>Ảnh chụp Bảng 1 (bài gốc, tr. 9).</b> Đơn vị giây. Cột Delta: “faster” = DataFusion nhanh hơn. Bảng không có Q21–Q24, Q34, Q35; bài không nói lý do.</figcaption></figure>
         <p><b>Bài giải thích Bảng 1 thế nào.</b> DataFusion hơn ở truy vấn có vị từ rất chọn lọc (Q2, Q8, Q20), có lẽ nhờ đẩy vị từ vào scan Parquet để bỏ row group; và ở truy vấn chỉ có một nhóm (Q4, Q7, Q30), có lẽ nhờ cập nhật aggregate vector hoá. Truy vấn chọn lọc vừa, số nhóm vừa (Q15, Q31, Q32, Q41, Q42) thì ngang nhau. Truy vấn có từ 10 triệu nhóm trở lên (Q18, Q19, Q36) DuckDB hơn, có lẽ nhờ aggregate song song tối ưu của nó.</p>
 
+        <h3 id="s8-q8">ClickBench Q8: Parquet có thể bỏ nhóm dữ liệu nào?</h3>
+        <p>Để xem cụ thể hơn một trường hợp DataFusion thắng trong bài báo, Q8 lọc các dòng có <code>AdvEngineID khác 0</code>, đếm số dòng theo mã quảng cáo rồi sắp xếp số đếm giảm dần. Tác giả đo được DataFusion <b>0,37 giây</b> và DuckDB <b>0,83 giây</b> trên một lõi; Bảng 1 ghi DataFusion nhanh hơn 2,24 lần. Đây là số đo của tác giả trên ClickBench 14 GB, không phải lần chạy trên MacBook.</p>
+        <div class="widget q8-guide" id="q8Guide" aria-labelledby="q8GuideTitle">
+          <p class="w-title" id="q8GuideTitle">Theo dấu điều kiện <code>AdvEngineID &lt;&gt; 0</code></p>
+          <p class="w-sub">Parquet lưu thống kê nhỏ nhất và lớn nhất cho từng nhóm dữ liệu. Chúng cho biết nhóm nào an toàn bỏ qua; không cần đọc mọi giá trị trước khi ra quyết định.</p>
+          <div class="terminal query-sql"><div class="terminal-bar"><span>ClickBench Q8 · truy vấn trong benchmark</span><button class="copy" type="button">Sao chép</button></div><pre id="q8Sql">select "AdvEngineID", count(*)
+from hits
+where "AdvEngineID" &lt;&gt; 0
+group by "AdvEngineID"
+order by count(*) desc;</pre></div>
+          <div class="q8-groups" aria-label="Ba ví dụ minh họa thống kê min/max của nhóm Parquet">
+            <div class="q8-group is-skip" data-q8-group="skip"><b>Nhóm A</b><span>min = 0 · max = 0</span><strong>Bỏ qua được</strong><small>Mọi dòng đều bằng 0, nên không dòng nào thỏa điều kiện.</small></div>
+            <div class="q8-group is-pass" data-q8-group="pass"><b>Nhóm B</b><span>min = 2 · max = 9</span><strong>Mọi dòng đều thỏa điều kiện</strong><small>Không cần loại dòng theo điều kiện, nhưng vẫn phải đọc mã để đếm theo từng giá trị.</small></div>
+            <div class="q8-group is-inspect" data-q8-group="inspect"><b>Nhóm C</b><span>min = 0 · max = 9</span><strong>Phải kiểm tra dòng</strong><small>Khoảng min/max có cả 0 và giá trị khác 0; thống kê chưa đủ để bỏ cả nhóm.</small></div>
+          </div>
+          <div class="q8-flow" aria-label="Luồng thực thi truy vấn Q8">
+            <div class="q8-stage" data-q8-stage="0"><b>1. Quét Parquet</b><span>đọc metadata và các cột cần thiết</span></div><i aria-hidden="true">→</i>
+            <div class="q8-stage" data-q8-stage="1"><b>2. Lọc</b><span>áp dụng AdvEngineID khác 0</span></div><i aria-hidden="true">→</i>
+            <div class="q8-stage" data-q8-stage="2"><b>3. Gom nhóm</b><span>đếm theo mã quảng cáo</span></div><i aria-hidden="true">→</i>
+            <div class="q8-stage" data-q8-stage="3"><b>4. Sắp xếp</b><span>đưa số đếm lớn lên trước</span></div>
+          </div>
+          <div class="controls"><button class="btn small" id="q8Next" type="button">Bước tiếp</button><button class="btn small ghost" id="q8Replay" type="button">Tự chạy</button><span class="q8-status" id="q8Status" aria-live="polite">Bước 1/4: quét Parquet</span></div>
+          <div class="note warn"><div class="note-title"><svg><use href="#i-warn"/></svg>Giới hạn của minh họa</div><p>Ba nhóm min/max ở trên là ví dụ giải thích nguyên lý, không phải thống kê được trích từ tệp ClickBench của tác giả. Bài báo không công bố kế hoạch <code>EXPLAIN</code> của Q8 hay số nhóm thực tế bị bỏ. Tác giả chỉ nhận định DataFusion có lẽ nhanh hơn nhờ đẩy điều kiện xuống phép quét Parquet để bỏ toàn bộ nhóm dòng. DuckDB cũng có thể lọc khi đọc Parquet; kết quả này không chứng minh DuckDB thiếu cơ chế đó, mà chỉ cho thấy hai bản hiện thực ở thời điểm bài báo có thời gian khác nhau.</p></div>
+          <p class="query-interpretation">Apache Parquet là định dạng tệp trên đĩa; thống kê min/max giúp quyết định có cần đọc một nhóm hay không. Apache Arrow là cách biểu diễn dữ liệu dạng cột trong bộ nhớ; DataFusion chuyển các dòng còn lại thành các lô để lọc, đếm và tổng hợp. Arrow hỗ trợ đường xử lý này, nhưng bài báo không cô lập thí nghiệm để kết luận Arrow riêng lẻ tạo ra chênh lệch Q8.</p>
+        </div>
+        <p class="query-footnote">Nguồn: Bảng 1 và phần “8.1 Single Core Efficiency”, trang 9 của <a href="https://doi.org/10.1145/3626246.3653368">bài báo</a>; câu truy vấn Q8 trong <a href="https://github.com/JayjeetAtGithub/datafusion-duckdb-benchmark/blob/main/clickbench/queries-datafusion.sql">kho mã benchmark</a>. Bài báo dùng DataFusion 32.0.0, DuckDB 0.9.1, ClickBench 14 GB, 100 tệp Parquet và một lõi.</p>
+
+        <figure class="q8-video">
+          <video controls playsinline preload="metadata" aria-label="Video giải thích ClickBench Q8, cơ chế lọc Parquet và vai trò của Arrow" poster="assets/video/clickbench-q8-poster.jpg">
+            <source src="assets/video/clickbench-q8-datafusion-parquet.mp4" type="video/mp4">
+            Trình duyệt không hỗ trợ phát video MP4. <a href="assets/video/clickbench-q8-datafusion-parquet.mp4">Tải video giải thích ClickBench Q8</a>.
+          </video>
+          <figcaption>Video giải thích ClickBench Q8, cách Parquet có thể bỏ qua nhóm dòng, vai trò của Arrow và giới hạn của kết luận từ bài báo.</figcaption>
+        </figure>
+
         <figure class="paper-fig"><button class="frame" type="button" data-zoom="assets/img/figures/fig5-tpch.webp" aria-label="Phóng to Hình 5 bài gốc"><picture><source srcset="assets/img/figures/fig5-tpch.webp" type="image/webp"><img src="assets/img/figures/fig5-tpch.png" alt="Hình 5 bài gốc: biểu đồ cột thời gian TPC-H SF10 của DuckDB và DataFusion" width="753" height="300" loading="lazy"></picture><span class="zoom-hint">Phóng to</span></button>
           <figcaption><b>Ảnh chụp Hình 5 (bài gốc, tr. 9).</b> TPC-H SF 10, một lõi, mỗi bảng một tệp Parquet. Xanh = DuckDB, cam = DataFusion, trục tung là giây.</figcaption></figure>
         <p><b>TPC-H.</b> Khác ClickBench, đa số truy vấn TPC-H join nhiều bảng. DataFusion nhanh hơn ở vài truy vấn có vị từ chọn lọc cao (Q4, Q9), ngang ở Q3, Q6, Q14, và chậm hơn hơn 2 lần ở Q11, Q17, Q18, Q21. Phần lớn chênh lệch do <b>thứ tự join chưa tối ưu</b>; ép tay thứ tự join tốt hơn thì hai bên tương đương.</p>
+        <h3 id="s8-cases">Đặt hai kế hoạch cạnh nhau: Q6 và Q18</h3>
+        <p>Hai truy vấn TPC-H, cùng dữ liệu Parquet SF 10, đo trên MacBook với DataFusion 32.0.0 và DuckDB 0.9.1. Q6 cho thấy DataFusion nhanh hơn; Q18 cho thấy điều ngược lại. Bấm từng bước để xem hai bộ máy thực hiện <em>cùng một yêu cầu</em> ra sao.</p>
+        <div class="widget query-lab" id="queryLab" aria-labelledby="queryLabTitle">
+          <p class="w-title" id="queryLabTitle">Theo dấu một truy vấn từ tệp đến kết quả</p>
+          <p class="w-sub">Đây là mô hình giải thích dựa trên SQL và kế hoạch đã chạy, không phải trình thực thi SQL trong trình duyệt. Các nhánh của kế hoạch thực tế có thể xử lý xen kẽ; bốn bước dưới đây chỉ là thứ tự để đọc và hiểu.</p>
+          <div class="controls" role="group" aria-label="Chọn truy vấn để so sánh">
+            <button class="btn small query-choice" type="button" data-case="q6" aria-pressed="true">Q6: DataFusion nhanh hơn</button>
+            <button class="btn small ghost query-choice" type="button" data-case="q18" aria-pressed="false">Q18: DuckDB nhanh hơn</button>
+          </div>
+          <h4 id="queryName">Q6: tính tổng tiền chiết khấu</h4>
+          <p id="queryPurpose"></p>
+          <div class="terminal query-sql"><div class="terminal-bar"><span id="querySqlLabel">TPC-H Q6, câu SQL gốc</span><button class="copy" type="button">Sao chép</button></div><pre id="querySql"></pre></div>
+          <p class="query-source" id="querySource"></p>
+          <div class="query-parquet-guide" id="queryParquetGuide" aria-live="polite"></div>
+          <div class="query-times" id="queryTimes" aria-label="Thời gian trung bình của ba lượt đo cuối"></div>
+          <p class="query-caveat">Số giây là trung bình ba lượt cuối của <code>results/latest/tpch_datafusion.csv</code> và <code>results/latest/tpch_duckdb.csv</code> trong kho chạy thử trên MacBook, không phải số của bài báo. Thời gian đo không phải thời gian của từng ô trong hoạt ảnh.</p>
+          <div class="query-trace-head">
+            <h4>Hai kế hoạch thực thi</h4>
+            <div class="controls"><button type="button" class="btn small ghost" id="queryPrev">Lùi lại</button><button type="button" class="btn small" id="queryNext">Bước tiếp</button><button type="button" class="btn small ghost" id="queryReplay">Tự chạy</button></div>
+          </div>
+          <p class="query-step-status" id="queryStepStatus" aria-live="polite"></p>
+          <div class="query-lanes">
+            <div class="query-lane" id="queryDfLane"><h5>DataFusion <span>kế hoạch vật lý</span></h5><ol class="query-nodes" id="queryDfNodes"></ol></div>
+            <div class="query-lane" id="queryDuckLane"><h5>DuckDB <span>kế hoạch vật lý</span></h5><ol class="query-nodes" id="queryDuckNodes"></ol></div>
+          </div>
+          <div class="readout query-explain" id="queryExplanation" aria-live="polite"></div>
+          <div class="query-interpretation" id="queryInterpretation"></div>
+          <details class="query-evidence"><summary>Xem số liệu và giới hạn của phép so sánh</summary><div id="queryEvidence"></div></details>
+        </div>
+        <p class="query-footnote">Nguồn: câu Q6 và Q18 trong <a href="https://github.com/JayjeetAtGithub/datafusion-duckdb-benchmark/blob/main/tpch/queries.sql">kho mã benchmark</a>; đối chiếu nhận xét TPC-H ở mục 8.1, Hình 5 của <a href="https://doi.org/10.1145/3626246.3653368">bài báo</a>. Các bước và thời gian của nhóm là kết quả thực nghiệm riêng trên macOS, không phải dữ liệu của tác giả.</p>
         <div class="note warn"><div class="note-title"><svg><use href="#i-warn"/></svg>Điều hình cho thấy mà chữ không nói</div><p>Q15 không có cột cam (DataFusion), và ở Q2 DataFusion chậm rõ (khoảng 6,8 s so với 1,5 s, đọc bằng mắt từ hình). Văn bản không bình luận hai điểm này.</p></div>
         <figure class="paper-fig"><button class="frame" type="button" data-zoom="assets/img/figures/fig6-h2o.webp" aria-label="Phóng to Hình 6 bài gốc"><picture><source srcset="assets/img/figures/fig6-h2o.webp" type="image/webp"><img src="assets/img/figures/fig6-h2o.png" alt="Hình 6 bài gốc: biểu đồ cột thời gian H2O groupby của DuckDB và DataFusion" width="753" height="331" loading="lazy"></picture><span class="zoom-hint">Phóng to</span></button>
           <figcaption><b>Ảnh chụp Hình 6 (bài gốc, tr. 9).</b> H2O-G (groupby), một lõi, một tệp CSV 488 MB.</figcaption></figure>
@@ -975,6 +1040,8 @@ ctx.sql(<span class="s">"SELECT a, double_it(a) AS d FROM t LIMIT 3"</span>).sho
 <script defer src="assets/js/data.js"></script>
 <script defer src="assets/js/hero.js"></script>
 <script defer src="assets/js/demos.js"></script>
+<script defer src="assets/js/query-lab.js"></script>
+<script defer src="assets/js/q8-guide.js"></script>
 <script defer src="assets/js/main.js"></script>
 </body>
 </html>
